@@ -1,0 +1,49 @@
+import { Routes } from '@angular/router';
+import { authGuard } from './core/auth/auth.guard';
+
+export const routes: Routes = [
+  {
+    path: 'login',
+    loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
+  },
+  {
+    path: '',
+    canActivate: [authGuard], // KÍCH HOẠT CHỐT CHẶN Ở ĐÂY
+    loadComponent: () => import('./features/layout/main-layout.component').then(m => m.MainLayoutComponent),
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
+      },
+      {
+        path: 'students',
+        loadComponent: () => import('./features/students/student-list.component').then(m => m.StudentListComponent)
+      },
+      {
+        path: 'students/new',
+        loadComponent: () => import('./features/students/student-form.component').then(m => m.StudentFormComponent)
+      },
+      {
+        path: 'students/detail/:id',
+        loadComponent: () => import('./features/students/student-detail.component').then(m => m.StudentDetailComponent)
+      },
+      {
+        path: 'parents',
+        loadComponent: () => import('./features/parents/parent-list.component').then(m => m.ParentListComponent)
+      },
+      {
+        path: 'parents/new',
+        loadComponent: () => import('./features/parents/parent-form.component').then(m => m.ParentFormComponent)
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
+      }
+      // Các route CRUD khác
+    ]
+  },
+  {
+    path: '**',
+    redirectTo: ''
+  }
+];
