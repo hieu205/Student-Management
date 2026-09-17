@@ -49,3 +49,4 @@ C:\Users\Dell\Desktop\demo_dotnet\backend\obj\Debug\net10.0\refint\backend.dll
 C:\Users\Dell\Desktop\demo_dotnet\backend\obj\Debug\net10.0\backend.pdb
 C:\Users\Dell\Desktop\demo_dotnet\backend\obj\Debug\net10.0\backend.genruntimeconfig.cache
 C:\Users\Dell\Desktop\demo_dotnet\backend\obj\Debug\net10.0\ref\backend.dll
+C:\Users\Dell\Desktop\demo_dotnet\backend\bin\Debug\net10.0\BCrypt-Net-Next.dll

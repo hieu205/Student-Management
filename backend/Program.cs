@@ -4,15 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 
-// Kiểm tra và giữ đúng prefix namespace của dự án bạn (backend hoặc demo_dotnet.backend)
 using demo_dotnet.backend.Data;
 using demo_dotnet.backend.Data.Interfaces;
 using demo_dotnet.backend.Data.Repositories;
 using demo_dotnet.backend.exception;
 using demo_dotnet.backend.Services;
 using demo_dotnet.backend.Services.Interface;
-using demo_dotnet.backend.Repositories.Interface;
-using demo_dotnet.backend.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,13 +22,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<IParentRepository, ParentRepository>();
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<IStudentParentRepository, StudentParentRepository>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IAdminService, AdminService>();   // FIX: thiếu dòng này trước đó -> AdminController sẽ lỗi runtime nếu không đăng ký
+builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IParentService, ParentService>();
+
 
 // 3. CONTROLLERS & VALIDATION RESPONSE FORMAT
 builder.Services.AddControllers()
