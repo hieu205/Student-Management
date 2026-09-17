@@ -23,20 +23,47 @@ public class StudentService : IStudentService
         _studentParentRepository = studentParentRepository;
     }
 
-    public async Task<List<StudentDetailResponseDto>> GetStudentsAsync(int page, int pageSize, string? search, string? className)
+    public async Task<List<StudentDetailResponseDto>> GetStudentsAsync(
+     int page,
+     int pageSize,
+     string? search,
+     string? className,
+     string? mhs)
     {
+        // Lấy toàn bộ danh sách sinh viên kèm Parents
         var students = await _studentRepository.GetAllStudent();
 
-        if (!string.IsNullOrWhiteSpace(search))
+        // 1. Lọc theo Mã học sinh (Mhs)
+        if (!string.IsNullOrWhiteSpace(mhs))
         {
-            students = students.Where(s => s.FullName.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-        if (!string.IsNullOrWhiteSpace(className))
-        {
-            students = students.Where(s => s.ClassName == className).ToList();
+            students = students
+                .Where(s => s.Mhs.Contains(mhs, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
 
-        return students.Select(MapToDetailDto).ToList();
+        // 2. Lọc theo Tên học sinh (search)
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            students = students
+                .Where(s => s.FullName.Contains(search, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        // 3. Lọc theo Lớp
+        if (!string.IsNullOrWhiteSpace(className))
+        {
+            students = students
+                .Where(s => string.Equals(s.ClassName, className, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        // 4. Phân trang (Skip & Take)
+        var pagedStudents = students
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return pagedStudents.Select(MapToDetailDto).ToList();
     }
 
     public async Task<StudentDetailResponseDto> GetStudentByIdAsync(int id)
@@ -49,6 +76,11 @@ public class StudentService : IStudentService
 
         return MapToDetailDto(student);
     }
+
+    // public async Task<StudentDetailResponseDto> GetStudentByMHS(String Mhs)
+    // {
+
+    // }
 
     public async Task<StudentDetailResponseDto> CreateStudentAsync(StudentRequest request)
     {
