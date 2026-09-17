@@ -73,26 +73,11 @@ import { ParentService } from '../../core/services/parent.service';
               <p *ngIf="submitted() && f['occupation'].errors?.['pattern']" class="text-red-500 text-xs mt-1">Nghề nghiệp không được chứa số và ký tự đặc biệt</p>
             </div>
 
-            <!-- Vai trò / Quan hệ -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Vai trò / Quan hệ</label>
-              <select formControlName="relationship"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white bg-white dark:bg-slate-800">
-                <option value="">Chọn mối quan hệ...</option>
-                <option value="Bố">Bố</option>
-                <option value="Mẹ">Mẹ</option>
-                <option value="Ông">Ông</option>
-                <option value="Bà">Bà</option>
-                <option value="Người giám hộ">Người giám hộ</option>
-                <option value="Khác">Khác</option>
-              </select>
-            </div>
-
             <!-- Địa chỉ -->
-            <div class="md:col-span-2">
+            <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Địa chỉ</label>
-              <textarea formControlName="address" rows="2"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"></textarea>
+              <input type="text" formControlName="address"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white">
             </div>
           </div>
 
@@ -137,8 +122,7 @@ export class ParentFormComponent implements OnInit {
     ]],
     email: ['', [Validators.email]],
     occupation: ['', [Validators.pattern(/^[a-zA-ZÀ-ỹ\s]*$/)]],
-    address: [''],
-    relationship: ['']
+    address: ['']
   });
 
   get f() { return this.parentForm.controls; }

@@ -62,11 +62,19 @@ export class StudentService {
 
   getStudents(page: number = 1, pageSize: number = 10, search: string = '', sortBy: string = '', sortDir: 'asc' | 'desc' = 'asc'): Observable<PaginatedResult<Student>> {
     let params = new HttpParams();
-    if (search) params = params.set('search', search);
+    // Do not pass search to backend, because backend only searches by FullName, but we want to search by Code too.
 
     return this.http.get<StudentResponseDto[]>(`${this.BASE_URL}/student`, { params }).pipe(
       map(list => {
         let students = list.map(dto => this.mapToStudent(dto));
+
+        if (search) {
+          const lowerSearch = search.toLowerCase();
+          students = students.filter(s =>
+            s.fullName.toLowerCase().includes(lowerSearch) ||
+            s.studentCode.toLowerCase().includes(lowerSearch)
+          );
+        }
 
         if (sortBy) {
           students.sort((a: any, b: any) => {

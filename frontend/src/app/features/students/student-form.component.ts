@@ -72,10 +72,13 @@ import { Student } from '../../core/models/student.model';
             <!-- Ngày sinh -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Ngày sinh <span class="text-red-500">*</span></label>
-              <input type="date" formControlName="dateOfBirth"
+              <input type="date" formControlName="dateOfBirth" min="1900-01-01" max="2099-12-31"
                 class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
                 [ngClass]="{'border-red-500': submitted() && f['dateOfBirth'].errors}">
-              <p *ngIf="submitted() && f['dateOfBirth'].errors?.['required']" class="text-red-500 text-xs mt-1">Ngày sinh là bắt buộc</p>
+              <div *ngIf="submitted() && f['dateOfBirth'].errors" class="text-red-500 text-xs mt-1">
+                <p *ngIf="f['dateOfBirth'].errors?.['required']">Ngày sinh là bắt buộc</p>
+                <p *ngIf="f['dateOfBirth'].errors?.['pattern']">Năm sinh không hợp lệ (nhập từ 1900 đến 2099)</p>
+              </div>
             </div>
 
             <!-- Giới tính -->
@@ -141,7 +144,7 @@ export class StudentFormComponent implements OnInit {
     this.studentForm = this.fb.group({
       studentCode: ['', [Validators.required, Validators.pattern(/^HS[0-9]+$/)]],
       fullName: ['', [Validators.required, Validators.pattern(/^[a-zA-ZÀ-ỹ\s]*[a-zA-ZÀ-ỹ][a-zA-ZÀ-ỹ\s]*$/)]],
-      dateOfBirth: ['', Validators.required],
+      dateOfBirth: ['', [Validators.required, Validators.pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/)]],
       gender: ['Male', Validators.required],
       className: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9\s]*$/)]],
       address: ['']

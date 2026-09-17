@@ -1,9 +1,11 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, signal, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, signal, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 import * as L from 'leaflet';
+import { StudentService } from '../../core/services/student.service';
+import { ParentService } from '../../core/services/parent.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -41,25 +43,24 @@ import * as L from 'leaflet';
             <div class="flex justify-between items-start">
               <div>
                 <p class="text-gray-500 dark:text-slate-400 font-medium mb-1">Tổng số Học sinh</p>
-                <h3 class="text-3xl font-bold text-gray-800 dark:text-slate-100">1,245</h3>
+                <h3 class="text-3xl font-bold text-gray-800 dark:text-slate-100">{{ totalStudents() }}</h3>
               </div>
               <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
               </div>
             </div>
             <div class="mt-4 flex items-center text-sm">
-              <span class="text-green-500 font-medium flex items-center"><svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> +12%</span>
-              <span class="text-gray-400 ml-2">so với tháng trước</span>
+              <span class="text-green-500 font-medium flex items-center"><svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Mới cập nhật</span>
             </div>
           </div>
           <!-- Dropdown List -->
           <div *ngIf="showStudentDropdown()" class="absolute top-full left-0 right-0 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 z-20 animate-fade-in-up">
             <div class="p-3 border-b border-gray-50 flex justify-between items-center bg-gray-50 dark:bg-slate-900 rounded-t-xl">
-              <span class="text-sm font-bold text-gray-700 dark:text-slate-300">Học sinh mới thêm</span>
+              <span class="text-sm font-bold text-gray-700 dark:text-slate-300">Học sinh (Gần đây)</span>
               <button routerLink="/students" class="text-blue-600 dark:text-blue-400 text-xs hover:underline cursor-pointer">Xem tất cả</button>
             </div>
             <ul class="max-h-64 overflow-y-auto">
-              <li *ngFor="let s of recentStudents" class="p-3 hover:bg-gray-50 dark:hover:bg-slate-700 border-b border-gray-50 last:border-0 transition-colors flex justify-between items-center">
+              <li *ngFor="let s of recentStudents()" class="p-3 hover:bg-gray-50 dark:hover:bg-slate-700 border-b border-gray-50 last:border-0 transition-colors flex justify-between items-center">
                 <div class="flex items-center gap-3">
                   <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs">{{ s.name.charAt(0) }}</div>
                   <div>
@@ -79,25 +80,24 @@ import * as L from 'leaflet';
             <div class="flex justify-between items-start">
               <div>
                 <p class="text-gray-500 dark:text-slate-400 font-medium mb-1">Tổng số Phụ huynh</p>
-                <h3 class="text-3xl font-bold text-gray-800 dark:text-slate-100">1,102</h3>
+                <h3 class="text-3xl font-bold text-gray-800 dark:text-slate-100">{{ totalParents() }}</h3>
               </div>
               <div class="p-3 bg-green-50 rounded-lg text-green-600 group-hover:scale-110 transition-transform">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
               </div>
             </div>
             <div class="mt-4 flex items-center text-sm">
-              <span class="text-green-500 font-medium flex items-center"><svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> +5%</span>
-              <span class="text-gray-400 ml-2">so với tháng trước</span>
+              <span class="text-green-500 font-medium flex items-center"><svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Mới cập nhật</span>
             </div>
           </div>
           <!-- Dropdown List -->
           <div *ngIf="showParentDropdown()" class="absolute top-full left-0 right-0 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 z-20 animate-fade-in-up">
             <div class="p-3 border-b border-gray-50 flex justify-between items-center bg-gray-50 dark:bg-slate-900 rounded-t-xl">
-              <span class="text-sm font-bold text-gray-700 dark:text-slate-300">Phụ huynh mới thêm</span>
+              <span class="text-sm font-bold text-gray-700 dark:text-slate-300">Phụ huynh (Gần đây)</span>
               <button routerLink="/parents" class="text-green-600 text-xs hover:underline cursor-pointer">Xem tất cả</button>
             </div>
             <ul class="max-h-64 overflow-y-auto">
-              <li *ngFor="let p of recentParents" class="p-3 hover:bg-gray-50 dark:hover:bg-slate-700 border-b border-gray-50 last:border-0 transition-colors flex justify-between items-center">
+              <li *ngFor="let p of recentParents()" class="p-3 hover:bg-gray-50 dark:hover:bg-slate-700 border-b border-gray-50 last:border-0 transition-colors flex justify-between items-center">
                 <div class="flex items-center gap-3">
                   <div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold text-xs">{{ p.name.charAt(0) }}</div>
                   <div>
@@ -160,7 +160,7 @@ import * as L from 'leaflet';
 
       <!-- Map Row -->
       <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col">
-        <h3 class="text-lg font-bold text-gray-800 dark:text-slate-100 mb-6">Bản đồ Phân bổ Địa chỉ Học sinh (Street View)</h3>
+        <h3 class="text-lg font-bold text-gray-800 dark:text-slate-100 mb-6">Bản đồ Phân bổ Địa chỉ Học sinh</h3>
         <div class="flex-1 relative min-h-[500px] w-full rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700">
           <div id="studentMap" class="absolute inset-0 z-0"></div>
         </div>
@@ -188,18 +188,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   showStudentDropdown = signal(false);
   showParentDropdown = signal(false);
 
-  // Mock recent lists for dropdowns
-  recentStudents = [
-    { name: 'Nguyễn Văn A', class: '10A1', date: 'Vừa xong' },
-    { name: 'Trần Thị B', class: '11B2', date: '2 giờ trước' },
-    { name: 'Lê Hoàng C', class: '12C3', date: '5 giờ trước' },
-    { name: 'Phạm Tuấn D', class: '10A4', date: 'Hôm qua' },
-  ];
-  recentParents = [
-    { name: 'Phạm Văn D', phone: '0901234567', relation: 'Bố' },
-    { name: 'Hoàng Thị E', phone: '0912345678', relation: 'Mẹ' },
-    { name: 'Lê Văn F', phone: '0988776655', relation: 'Ông' },
-  ];
+  private studentService = inject(StudentService);
+  private parentService = inject(ParentService);
+
+  totalStudents = signal(0);
+  totalParents = signal(0);
+
+  recentStudents = signal<any[]>([]);
+  recentParents = signal<any[]>([]);
 
   // Chart Data: Bar Chart (Học sinh theo khối)
   public barChartOptions: ChartConfiguration['options'] = {
@@ -218,7 +214,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     labels: ['Khối 10', 'Khối 11', 'Khối 12'],
     datasets: [
       {
-        data: [450, 420, 375],
+        data: [0, 0, 0],
         label: 'Học sinh',
         backgroundColor: '#3b82f6',
         borderRadius: 6,
@@ -241,7 +237,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     labels: ['Nam', 'Nữ'],
     datasets: [
       {
-        data: [650, 595],
+        data: [0, 0],
         backgroundColor: ['#3b82f6', '#ec4899'],
         borderWidth: 0,
         hoverOffset: 4
@@ -253,6 +249,66 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.timer = setInterval(() => {
       this.currentTime.set(new Date());
     }, 1000);
+
+    // Fetch Students Data
+    this.studentService.getStudents(1, 1000, '', '').subscribe(res => {
+      this.totalStudents.set(res.totalCount);
+
+      // Compute charts data
+      let male = 0; let female = 0;
+      const classCounts: Record<string, number> = {};
+
+      res.items.forEach(s => {
+        if (s.gender === 'Male') male++; else female++;
+        if (s.className) {
+          classCounts[s.className] = (classCounts[s.className] || 0) + 1;
+        }
+      });
+
+      // Update Doughnut Chart (Gender)
+      this.doughnutChartData = {
+        labels: ['Nam', 'Nữ'],
+        datasets: [{
+          data: [male, female],
+          backgroundColor: ['#3b82f6', '#ec4899'],
+          borderWidth: 0,
+          hoverOffset: 4
+        }]
+      };
+
+      // Update Bar Chart (Classes)
+      const classes = Object.keys(classCounts).sort();
+      this.barChartData = {
+        labels: classes.length ? classes : ['Chưa có dữ liệu'],
+        datasets: [{
+          data: classes.length ? classes.map(c => classCounts[c]) : [0],
+          label: 'Học sinh',
+          backgroundColor: '#3b82f6',
+          borderRadius: 6,
+          barThickness: 40
+        }]
+      };
+
+      // Set recent students
+      this.recentStudents.set(res.items.slice(0, 5).map(s => ({
+        name: s.fullName,
+        class: s.className || 'Chưa rõ',
+        date: s.studentCode
+      })));
+
+      // Call async geocoding for a limited batch of students (e.g. 15 to not overload API)
+      this.geocodeStudents(res.items.slice(0, 15));
+    });
+
+    // Fetch Parents Data
+    this.parentService.getParents(1, 10, '').subscribe(res => {
+      this.totalParents.set(res.totalCount);
+      this.recentParents.set(res.items.slice(0, 5).map(p => ({
+        name: p.fullName,
+        phone: p.phoneNumber,
+        relation: p.occupation || 'Phụ huynh'
+      })));
+    });
   }
 
   ngAfterViewInit() {
@@ -265,6 +321,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       this.map.remove();
     }
   }
+
+  private mapStudents: any[] = [];
 
   private initMap(): void {
     // Sửa lỗi icon mặc định của Leaflet trong Angular
@@ -280,34 +338,73 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     });
     L.Marker.prototype.options.icon = DefaultIcon;
 
-    // Zoom level 15 để nhìn rõ đường xá (Mô phỏng khu vực ngã tư sở, Hà Nội)
+    // Zoom level 14 để nhìn rõ đường xá (Hà Nội)
     this.map = L.map('studentMap', {
       attributionControl: false
-    }).setView([21.0076, 105.8196], 15);
+    }).setView([21.0076, 105.8196], 14);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
       maxZoom: 19
     }).addTo(this.map);
 
-    // Mock data mô phỏng tọa độ chi tiết của học sinh (đến tận ngõ/ngách)
-    const students = [
-      { name: 'Trần Thị B (HS001)', address: 'Số 10, Ngõ 29 Khương Hạ', coords: [21.0011, 105.8188] },
-      { name: 'Nguyễn Văn A (HS002)', address: 'Số 45, Đường Láng', coords: [21.0065, 105.8155] },
-      { name: 'Lê Hoàng C (HS003)', address: 'Số 2, Ngõ 73 Trường Chinh', coords: [21.0022, 105.8271] },
-      { name: 'Phạm Minh D (HS004)', address: 'Chung cư Royal City, Nguyễn Trãi', coords: [21.0038, 105.8152] }
-    ];
+    this.renderMapMarkers();
+  }
 
-    students.forEach(s => {
-      L.marker(s.coords as L.LatLngExpression)
-        .addTo(this.map!)
-        .bindPopup(`
-          <div class="text-sm">
-            <strong class="text-blue-600 dark:text-blue-400 block mb-1">${s.name}</strong>
-            <span>📍 ${s.address}</span>
-          </div>
-        `);
-    });
+  private async geocodeStudents(students: any[]) {
+    this.mapStudents = [];
+    for (const s of students) {
+      // Default to a random location in Hanoi if no address or geocoding fails
+      let lat = 21.0076 + (Math.random() - 0.5) * 0.05;
+      let lon = 105.8196 + (Math.random() - 0.5) * 0.05;
+
+      if (s.address && s.address.trim() !== '') {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(s.address)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.length > 0) {
+              lat = parseFloat(data[0].lat);
+              lon = parseFloat(data[0].lon);
+            }
+          }
+        } catch (e) {
+          console.error('Geocoding failed for', s.address);
+        }
+        // Respect Nominatim's rate limit of 1 req/s (delay 1 second between requests)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      const mapStudent = {
+        name: `${s.fullName} (${s.studentCode})`,
+        address: s.address || 'Chưa cập nhật',
+        coords: [lat, lon]
+      };
+
+      this.mapStudents.push(mapStudent);
+
+      // If the map is already initialized, draw the marker immediately
+      if (this.map) {
+        this.renderSingleMarker(mapStudent);
+      }
+    }
+  }
+
+  private renderMapMarkers(): void {
+    if (!this.map || !this.mapStudents.length) return;
+    this.mapStudents.forEach(s => this.renderSingleMarker(s));
+  }
+
+  private renderSingleMarker(s: any): void {
+    if (!this.map) return;
+    L.marker(s.coords as L.LatLngExpression)
+      .addTo(this.map!)
+      .bindPopup(`
+        <div class="text-sm">
+          <strong class="text-blue-600 dark:text-blue-400 block mb-1">${s.name}</strong>
+          <span>📍 ${s.address}</span>
+        </div>
+      `);
   }
 
   @HostListener('document:click', ['$event'])

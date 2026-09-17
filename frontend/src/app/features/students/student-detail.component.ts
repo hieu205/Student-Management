@@ -133,8 +133,6 @@ import { ParentService } from '../../core/services/parent.service';
               <option value="" disabled>Chọn vai trò...</option>
               <option value="Bố">Bố</option>
               <option value="Mẹ">Mẹ</option>
-              <option value="Ông">Ông</option>
-              <option value="Bà">Bà</option>
               <option value="Người giám hộ">Người giám hộ</option>
             </select>
 
@@ -152,6 +150,18 @@ import { ParentService } from '../../core/services/parent.service';
     <!-- Loading State -->
     <div *ngIf="isLoading()" class="flex justify-center items-center h-64">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+
+    <!-- Modal XÃ¡c nháº­n Gá»¡ liÃªn káº¿t -->
+    <div *ngIf="parentToRemove()" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 dark:bg-black/60 backdrop-blur-sm">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-sm w-full mx-4 p-6 animate-fade-in-up border border-gray-100 dark:border-slate-700">
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Xác nhận gỡ liên kết</h3>
+        <p class="text-gray-600 dark:text-slate-300 mb-6">Bạn có chắc chắn muốn gỡ bỏ liên kết giữa học sinh này và phụ huynh đã chọn không?</p>
+        <div class="flex justify-end gap-3">
+          <button (click)="cancelRemove()" class="px-4 py-2 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">Hủy</button>
+          <button (click)="confirmRemove()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium shadow-sm">Gỡ liên kết</button>
+        </div>
+      </div>
     </div>
   `
 })
@@ -255,13 +265,24 @@ export class StudentDetailComponent implements OnInit {
       });
   }
 
+  parentToRemove = signal<number | null>(null);
+
   removeParent(parentId: number) {
-    if (!this.student()) return;
-    if (confirm('Gỡ bỏ liên kết với phụ huynh này?')) {
-      this.studentService.removeParentLink(this.student()!.id, parentId).subscribe(() => {
-        this.loadData(this.student()!.id);
-      });
-    }
+    this.parentToRemove.set(parentId);
+  }
+
+  cancelRemove() {
+    this.parentToRemove.set(null);
+  }
+
+  confirmRemove() {
+    const parentId = this.parentToRemove();
+    if (!this.student() || !parentId) return;
+
+    this.studentService.removeParentLink(this.student()!.id, parentId).subscribe(() => {
+      this.parentToRemove.set(null);
+      this.loadData(this.student()!.id);
+    });
   }
 
   goBack() {
