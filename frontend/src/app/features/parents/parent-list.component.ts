@@ -108,7 +108,7 @@ import { ParentFormComponent } from './parent-form.component';
               <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600 dark:text-slate-300 align-middle">{{ parent.phoneNumber }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle">{{ parent.email || '—' }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle">{{ parent.occupation || '—' }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle">{{ parent.address || '—' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle truncate max-w-xs" [title]="parent.address || ''">{{ parent.address || '—' }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium action-dropdown-container relative align-middle">
                 <button (click)="toggleDropdown(parent.id, $event)" class="text-gray-400 hover:text-blue-600 dark:text-blue-400 p-2 rounded-full hover:bg-blue-50 dark:bg-blue-900/20 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-100">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
