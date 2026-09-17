@@ -23,6 +23,12 @@ import { ParentService } from '../../core/services/parent.service';
       <div class="p-6">
         <form [formGroup]="parentForm" (ngSubmit)="onSubmit()">
 
+          <!-- General Server Error -->
+          <div *ngIf="serverError()" class="mb-5 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm font-medium flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            {{ serverError() }}
+          </div>
+
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <!-- Họ Tên -->
             <div class="md:col-span-2">
@@ -39,12 +45,13 @@ import { ParentService } from '../../core/services/parent.service';
             <!-- SĐT -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Số điện thoại <span class="text-red-500">*</span></label>
-              <input type="text" formControlName="phoneNumber"
+              <input type="text" formControlName="phoneNumber" (input)="f['phoneNumber'].setErrors(null)"
                 class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
-                [ngClass]="{'border-red-500': submitted() && f['phoneNumber'].errors}">
-              <div *ngIf="submitted() && f['phoneNumber'].errors" class="text-red-500 text-xs mt-1">
+                [ngClass]="{'border-red-500': (submitted() || f['phoneNumber'].dirty) && f['phoneNumber'].errors}">
+              <div *ngIf="(submitted() || f['phoneNumber'].dirty) && f['phoneNumber'].errors" class="text-red-500 text-xs mt-1">
                 <p *ngIf="f['phoneNumber'].errors?.['required']">Số điện thoại là bắt buộc</p>
                 <p *ngIf="f['phoneNumber'].errors?.['pattern']">Số điện thoại không hợp lệ (Gồm 10 số, bắt đầu bằng 03,05,07,08,09)</p>
+                <p *ngIf="f['phoneNumber'].errors?.['serverError']" class="font-semibold">{{ f['phoneNumber'].errors?.['serverError'] }}</p>
               </div>
             </div>
 
@@ -120,6 +127,7 @@ export class ParentFormComponent implements OnInit {
   isEditMode = signal(false);
   isLoading = signal(false);
   submitted = signal(false);
+  serverError = signal<string | null>(null);
 
   parentForm: FormGroup = this.fb.group({
     fullName: ['', [Validators.required, Validators.pattern(/^[a-zA-ZÀ-ỹ\s]*[a-zA-ZÀ-ỹ][a-zA-ZÀ-ỹ\s]*$/)]],
@@ -164,7 +172,7 @@ export class ParentFormComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: () => {
-        alert('Không tìm thấy phụ huynh');
+        this.serverError.set('Không tìm thấy phụ huynh');
         this.goBack();
       }
     });
@@ -172,6 +180,7 @@ export class ParentFormComponent implements OnInit {
 
   onSubmit() {
     this.submitted.set(true);
+    this.serverError.set(null);
     if (this.parentForm.invalid) return;
 
     this.isLoading.set(true);
@@ -197,7 +206,17 @@ export class ParentFormComponent implements OnInit {
             this.router.navigate(['/parents']);
           }
         },
-        error: (err) => { this.isLoading.set(false); alert(err.message || 'Lỗi cập nhật'); }
+        error: (err) => {
+          this.isLoading.set(false);
+          const msg = err.error?.message || 'Có lỗi xảy ra khi cập nhật phụ huynh. Vui lòng kiểm tra lại dữ liệu.';
+          if (msg.toLowerCase().includes('điện thoại')) {
+            this.f['phoneNumber'].setErrors({ serverError: msg });
+          } else if (msg.toLowerCase().includes('email')) {
+            this.f['email'].setErrors({ serverError: msg });
+          } else {
+            this.serverError.set(msg);
+          }
+        }
       });
     } else {
       this.parentService.createParent(data).subscribe({
@@ -209,7 +228,17 @@ export class ParentFormComponent implements OnInit {
             this.router.navigate(['/parents']);
           }
         },
-        error: (err) => { this.isLoading.set(false); alert(err.message || 'Lỗi thêm mới'); }
+        error: (err) => {
+          this.isLoading.set(false);
+          const msg = err.error?.message || 'Có lỗi xảy ra khi thêm mới phụ huynh.';
+          if (msg.toLowerCase().includes('điện thoại')) {
+            this.f['phoneNumber'].setErrors({ serverError: msg });
+          } else if (msg.toLowerCase().includes('email')) {
+            this.f['email'].setErrors({ serverError: msg });
+          } else {
+            this.serverError.set(msg);
+          }
+        }
       });
     }
   }

@@ -48,7 +48,7 @@ import { StudentFormComponent } from './student-form.component';
           </div>
 
           <button
-            routerLink="/students/new"
+            (click)="openAddModal()"
             class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center transition-all shadow-sm hover:shadow-md whitespace-nowrap flex-shrink-0">
             <svg class="h-5 w-5 mr-1.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -140,7 +140,7 @@ import { StudentFormComponent } from './student-form.component';
                     <img [src]="'https://ui-avatars.com/api/?name=' + parent.fullName + '&background=random&color=fff&size=128'" alt="Avatar" class="w-8 h-8 rounded-full shadow-sm shrink-0 border border-gray-200 dark:border-slate-600">
                     <div class="flex flex-col overflow-hidden">
                       <span class="font-bold text-sm text-gray-800 dark:text-slate-200 leading-tight truncate">{{ parent.fullName }}</span>
-                      <span class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 truncate">{{ parent.relationshipType || 'Phụ huynh' }} - {{ parent.phoneNumber }}</span>
+                      <span class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 truncate">{{ parent.relationshipType === 'Father' ? 'Bố' : (parent.relationshipType === 'Mother' ? 'Mẹ' : (parent.relationshipType === 'Guardian' ? 'Người giám hộ' : (parent.relationshipType || 'Phụ huynh'))) }} - {{ parent.phoneNumber }}</span>
                     </div>
                   </div>
                   <div class="pt-2 pb-1" *ngIf="student.parents.length > 2">
@@ -268,11 +268,29 @@ import { StudentFormComponent } from './student-form.component';
         .animate-fade-in-up {
           animation: fadeInUp 0.2s ease-out;
         }
+        .animate-fade-in-down {
+          animation: fadeInDown 0.3s ease-out;
+        }
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes fadeInDown {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
       </style>
+    </div>
+
+    <!-- Add Modal Overlay -->
+    <div *ngIf="isAddModalOpen()" class="fixed inset-0 z-[100] flex items-start justify-center pt-10 pb-10 bg-gray-900/50 dark:bg-black/60 backdrop-blur-sm overflow-y-auto">
+      <div class="w-full max-w-3xl px-4 animate-fade-in-down" (click)="$event.stopPropagation()">
+        <app-student-form
+          [isModal]="true"
+          (saved)="onAddModalSaved()"
+          (cancelled)="closeAddModal()">
+        </app-student-form>
+      </div>
     </div>
 
     <!-- Edit Modal Overlay -->
@@ -325,6 +343,7 @@ export class StudentListComponent implements OnInit {
   viewMode = signal<'list' | 'grid'>('list');
 
   // Modals state
+  isAddModalOpen = signal(false);
   isEditModalOpen = signal(false);
   editingStudentId = signal<number | null>(null);
   deleteStudentId = signal<number | null>(null);
@@ -368,10 +387,18 @@ export class StudentListComponent implements OnInit {
   loadStudents() {
     this.isLoading.set(true);
     this.studentService.getStudents(this.currentPage(), this.pageSize, this.searchTerm, this.sortColumn(), this.sortDirection())
-      .subscribe(res => {
-        this.students.set(res.items);
-        this.totalCount.set(res.totalCount);
-        this.isLoading.set(false);
+      .subscribe({
+        next: (res) => {
+          this.students.set(res.items);
+          this.totalCount.set(res.totalCount);
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          console.error('Lỗi khi tải danh sách học sinh:', err);
+          this.isLoading.set(false);
+          this.students.set([]);
+          alert('Không thể kết nối đến máy chủ Backend. Vui lòng kiểm tra lại!');
+        }
       });
   }
 
@@ -408,6 +435,19 @@ export class StudentListComponent implements OnInit {
 
 
   // --- Modals Logic ---
+
+  openAddModal() {
+    this.isAddModalOpen.set(true);
+  }
+
+  closeAddModal() {
+    this.isAddModalOpen.set(false);
+  }
+
+  onAddModalSaved() {
+    this.closeAddModal();
+    this.loadStudents();
+  }
 
   openEditModal(id: number) {
     this.activeDropdown.set(null);

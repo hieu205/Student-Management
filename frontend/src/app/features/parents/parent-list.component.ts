@@ -48,7 +48,7 @@ import { ParentFormComponent } from './parent-form.component';
           </div>
 
           <button
-            routerLink="/parents/new"
+            (click)="openAddModal()"
             class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center transition-all shadow-sm hover:shadow-md whitespace-nowrap flex-shrink-0">
             <svg class="h-5 w-5 mr-1.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -213,6 +213,17 @@ import { ParentFormComponent } from './parent-form.component';
       </style>
     </div>
 
+    <!-- Add Modal Overlay -->
+    <div *ngIf="isAddModalOpen()" class="fixed inset-0 z-[100] flex items-start justify-center pt-10 pb-10 bg-gray-900/50 dark:bg-black/60 backdrop-blur-sm overflow-y-auto">
+      <div class="w-full max-w-3xl px-4 animate-fade-in-down" (click)="$event.stopPropagation()">
+        <app-parent-form
+          [isModal]="true"
+          (saved)="onAddModalSaved()"
+          (cancelled)="closeAddModal()">
+        </app-parent-form>
+      </div>
+    </div>
+
     <!-- Edit Modal Overlay -->
     <div *ngIf="isEditModalOpen()" class="fixed inset-0 z-[100] flex items-start justify-center pt-10 pb-10 bg-gray-900/50 dark:bg-black/60 backdrop-blur-sm overflow-y-auto">
       <div class="w-full max-w-3xl px-4 animate-fade-in-down" (click)="$event.stopPropagation()">
@@ -312,14 +323,23 @@ export class ParentListComponent implements OnInit {
   loadParents() {
     this.isLoading.set(true);
     this.parentService.getParents(this.currentPage(), this.pageSize, this.searchTerm, this.sortColumn(), this.sortDirection())
-      .subscribe(res => {
-        this.parents.set(res.items);
-        this.totalCount.set(res.totalCount);
-        this.isLoading.set(false);
+      .subscribe({
+        next: (res) => {
+          this.parents.set(res.items);
+          this.totalCount.set(res.totalCount);
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          console.error('Lỗi khi tải danh sách phụ huynh:', err);
+          this.isLoading.set(false);
+          this.parents.set([]);
+          alert('Không thể kết nối đến máy chủ Backend. Vui lòng kiểm tra lại!');
+        }
       });
   }
 
   // Modals state
+  isAddModalOpen = signal(false);
   isEditModalOpen = signal(false);
   editingParentId = signal<number | null>(null);
   deleteParentId = signal<number | null>(null);
@@ -329,6 +349,19 @@ export class ParentListComponent implements OnInit {
   }
 
   // --- Modals Logic ---
+
+  openAddModal() {
+    this.isAddModalOpen.set(true);
+  }
+
+  closeAddModal() {
+    this.isAddModalOpen.set(false);
+  }
+
+  onAddModalSaved() {
+    this.closeAddModal();
+    this.loadParents();
+  }
 
   openEditModal(id: number) {
     this.activeDropdown.set(null);

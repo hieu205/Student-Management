@@ -72,7 +72,7 @@ import { ParentService } from '../../core/services/parent.service';
               <tr *ngFor="let parent of student()?.parents">
                 <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{{ parent.fullName }}</td>
                 <td class="px-4 py-3 text-sm text-blue-600 dark:text-blue-400 font-semibold">
-                  {{ parent.relationshipType || '—' }}
+                  {{ parent.relationshipType === 'Father' ? 'Bố' : (parent.relationshipType === 'Mother' ? 'Mẹ' : (parent.relationshipType === 'Guardian' ? 'Người giám hộ' : (parent.relationshipType || '—'))) }}
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">{{ parent.phoneNumber }}</td>
                 <td class="px-4 py-3 text-right">
@@ -101,11 +101,10 @@ import { ParentService } from '../../core/services/parent.service';
                      [placeholder]="selectedParent() ? '' : '🔍 Gõ tên hoặc SĐT phụ huynh để tìm...'"
                      class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 transition-all">
 
-              <!-- Selected Badge Overlay (Hiển thị đè lên input khi đã chọn) -->
+              <!-- Selected Badge Overlay -->
               <div *ngIf="selectedParent()" class="absolute inset-y-1 left-1 right-10 flex items-center bg-blue-100 dark:bg-blue-900 rounded px-3 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800/30">
                 <span class="font-medium truncate">{{ selectedParent()?.fullName }}</span>
                 <span class="ml-2 text-sm text-blue-600 dark:text-blue-400 truncate">- {{ selectedParent()?.phoneNumber }}</span>
-                <span class="ml-2 text-xs bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full" *ngIf="selectedParent()?.relationship">{{ selectedParent()?.relationship }}</span>
               </div>
               <button *ngIf="selectedParent()" (click)="clearSelection(); $event.stopPropagation()" class="absolute inset-y-1 right-1 px-3 text-gray-400 hover:text-red-500 bg-white dark:bg-slate-800 rounded-md">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -122,7 +121,6 @@ import { ParentService } from '../../core/services/parent.service';
                       class="px-4 py-3 hover:bg-blue-50 dark:bg-blue-900/20 dark:hover:bg-slate-700 cursor-pointer flex flex-col border-b border-gray-50 last:border-0 transition-colors">
                     <div class="flex justify-between items-center">
                       <span class="font-medium text-gray-900 dark:text-white">{{ p.fullName }}</span>
-                      <span *ngIf="p.relationship" class="text-xs bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded">{{ p.relationship }}</span>
                     </div>
                     <span class="text-xs text-gray-500 dark:text-slate-400 mt-1">SĐT: {{ p.phoneNumber }} | Nghề: {{ p.occupation || '—' }}</span>
                   </li>
@@ -130,7 +128,17 @@ import { ParentService } from '../../core/services/parent.service';
               </div>
             </div>
 
-            <button (click)="addParent()" [disabled]="!selectedParent() || isLinking()"
+            <!-- Dropdown chọn Vai trò -->
+            <select *ngIf="selectedParent()" [(ngModel)]="selectedRelationship" class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 min-w-[150px]">
+              <option value="" disabled>Chọn vai trò...</option>
+              <option value="Bố">Bố</option>
+              <option value="Mẹ">Mẹ</option>
+              <option value="Ông">Ông</option>
+              <option value="Bà">Bà</option>
+              <option value="Người giám hộ">Người giám hộ</option>
+            </select>
+
+            <button (click)="addParent()" [disabled]="!selectedParent() || !selectedRelationship || isLinking()"
               class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md transition-colors disabled:opacity-50 whitespace-nowrap font-medium flex items-center justify-center">
               <svg *ngIf="isLinking()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
               {{ isLinking() ? 'Đang gán...' : 'Gán vào HS' }}
@@ -166,6 +174,7 @@ export class StudentDetailComponent implements OnInit {
   showDropdown = false;
   searchTerm = '';
   selectedParent = signal<Parent | null>(null);
+  selectedRelationship = ''; // Khai báo lại biến lưu vai trò
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
@@ -191,7 +200,6 @@ export class StudentDetailComponent implements OnInit {
     });
   }
 
-  // Lọc dữ liệu khi gõ phím
   filterParents() {
     const term = this.searchTerm.toLowerCase();
     if (!term) {
@@ -207,28 +215,43 @@ export class StudentDetailComponent implements OnInit {
 
   selectParent(p: Parent) {
     this.selectedParent.set(p);
-    this.searchTerm = ''; // Reset ô tìm kiếm
+    this.searchTerm = '';
     this.showDropdown = false;
+    this.selectedRelationship = 'Mother'; // Đặt mặc định gợi ý
   }
 
   clearSelection() {
     this.selectedParent.set(null);
     this.searchTerm = '';
+    this.selectedRelationship = '';
     this.filterParents();
   }
 
   addParent() {
     const parent = this.selectedParent();
-    if (!parent || !this.student()) return;
+    if (!parent || !this.student() || !this.selectedRelationship) return;
 
     this.isLinking.set(true);
-    const relationship = parent.relationship || 'Chưa xác định';
 
-    this.studentService.addParentLink(this.student()!.id, parent.id, relationship)
-      .subscribe(() => {
-        this.isLinking.set(false);
-        this.clearSelection();
-        this.loadData(this.student()!.id);
+    // Tạm thời map các tuỳ chọn Tiếng Việt sang 3 giá trị cố định của BE
+    let mappedRelationship = 'Guardian';
+    if (this.selectedRelationship === 'Bố' || this.selectedRelationship === 'Ông') {
+      mappedRelationship = 'Father';
+    } else if (this.selectedRelationship === 'Mẹ' || this.selectedRelationship === 'Bà') {
+      mappedRelationship = 'Mother';
+    }
+
+    this.studentService.addParentLink(this.student()!.id, parent.id, mappedRelationship)
+      .subscribe({
+        next: () => {
+          this.isLinking.set(false);
+          this.clearSelection();
+          this.loadData(this.student()!.id);
+        },
+        error: (err) => {
+          this.isLinking.set(false);
+          alert('Có lỗi xảy ra khi gán phụ huynh: ' + (err.error?.message || err.message));
+        }
       });
   }
 

@@ -24,16 +24,24 @@ import { Student } from '../../core/models/student.model';
       <div class="p-6">
         <form [formGroup]="studentForm" (ngSubmit)="onSubmit()">
 
+          <!-- General Server Error -->
+          <div *ngIf="serverError()" class="mb-5 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm font-medium flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            {{ serverError() }}
+          </div>
+
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <!-- Mã HS -->
+
+            <!-- Mã học sinh -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Mã Học Sinh <span class="text-red-500">*</span></label>
-              <input type="text" formControlName="studentCode"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
-                [ngClass]="{'border-red-500': submitted() && f['studentCode'].errors}">
-              <div *ngIf="submitted() && f['studentCode'].errors" class="text-red-500 text-xs mt-1">
+              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Mã học sinh <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="studentCode" (input)="f['studentCode'].setErrors(null)"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white uppercase"
+                [ngClass]="{'border-red-500': (submitted() || f['studentCode'].dirty) && f['studentCode'].errors}">
+              <div *ngIf="(submitted() || f['studentCode'].dirty) && f['studentCode'].errors" class="text-red-500 text-xs mt-1">
                 <p *ngIf="f['studentCode'].errors?.['required']">Mã học sinh là bắt buộc</p>
-                <p *ngIf="f['studentCode'].errors?.['pattern']">Mã học sinh phải bắt đầu bằng HS và chỉ chứa số</p>
+                <p *ngIf="f['studentCode'].errors?.['pattern']">Mã học sinh chỉ chứa chữ và số</p>
+                <p *ngIf="f['studentCode'].errors?.['serverError']" class="font-semibold">{{ f['studentCode'].errors?.['serverError'] }}</p>
               </div>
             </div>
 
@@ -122,6 +130,7 @@ export class StudentFormComponent implements OnInit {
   isEditMode = signal(false);
   isLoading = signal(false);
   submitted = signal(false);
+  serverError = signal<string | null>(null);
 
   ngOnInit() {
     this.initForm();
@@ -130,14 +139,16 @@ export class StudentFormComponent implements OnInit {
 
   private initForm() {
     this.studentForm = this.fb.group({
-      studentCode: ['', [Validators.required, Validators.pattern(/^HS\d+$/)]],
-      fullName: ['', [Validators.required, Validators.pattern(/^[^0-9!@#$%^&*()_+={}\[\]|\\:;"'<>,.?/]*$/)]],
+      studentCode: ['', [Validators.required, Validators.pattern(/^HS[0-9]+$/)]],
+      fullName: ['', [Validators.required, Validators.pattern(/^[a-zA-ZÀ-ỹ\s]*[a-zA-ZÀ-ỹ][a-zA-ZÀ-ỹ\s]*$/)]],
       dateOfBirth: ['', Validators.required],
       gender: ['Male', Validators.required],
-      className: ['', [Validators.required, Validators.pattern(/^[0-9]+[a-zA-Z0-9]+$/)]],
+      className: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9\s]*$/)]],
       address: ['']
     });
   }
+
+  get f() { return this.studentForm.controls; }
 
   private checkEditMode() {
     let id = this.studentId;
@@ -150,46 +161,40 @@ export class StudentFormComponent implements OnInit {
 
     if (id) {
       this.isEditMode.set(true);
-      this.loadStudentData(id);
+      this.loadStudent(id);
     }
   }
 
-  private loadStudentData(id: number) {
+  loadStudent(id: number) {
     this.isLoading.set(true);
     this.studentService.getStudentById(id).subscribe({
       next: (student) => {
         if (student) {
-          const dateStr = new Date(student.dateOfBirth).toISOString().split('T')[0];
-          this.studentForm.patchValue({
-            ...student,
-            dateOfBirth: dateStr
-          });
+          if (student.dateOfBirth) {
+            student.dateOfBirth = student.dateOfBirth.split('T')[0];
+          }
+          this.studentForm.patchValue(student);
         }
         this.isLoading.set(false);
       },
-      error: (err) => {
-        console.error('Lỗi khi tải dữ liệu học sinh', err);
-        this.isLoading.set(false);
-        alert('Không tìm thấy học sinh!');
+      error: () => {
+        this.serverError.set('Không tìm thấy học sinh');
         this.goBack();
       }
     });
   }
 
-  get f() {
-    return this.studentForm.controls;
-  }
-
   onSubmit() {
     this.submitted.set(true);
+    this.serverError.set(null);
     if (this.studentForm.invalid) return;
 
     this.isLoading.set(true);
     const rawData = this.studentForm.value;
     const data = {
       ...rawData,
-      studentCode: rawData.studentCode?.trim(),
       fullName: rawData.fullName?.trim(),
+      studentCode: rawData.studentCode?.trim(),
       className: rawData.className?.trim(),
       address: rawData.address?.trim()
     };
@@ -208,7 +213,12 @@ export class StudentFormComponent implements OnInit {
         },
         error: (err) => {
           this.isLoading.set(false);
-          alert(err.message || 'Lỗi cập nhật');
+          const msg = err.error?.message || 'Có lỗi xảy ra khi cập nhật học sinh.';
+          if (msg.toLowerCase().includes('mã')) {
+            this.f['studentCode'].setErrors({ serverError: msg });
+          } else {
+            this.serverError.set(msg);
+          }
         }
       });
     } else {
@@ -223,7 +233,12 @@ export class StudentFormComponent implements OnInit {
         },
         error: (err) => {
           this.isLoading.set(false);
-          alert(err.message || 'Lỗi thêm mới');
+          const msg = err.error?.message || 'Có lỗi xảy ra khi thêm học sinh.';
+          if (msg.toLowerCase().includes('mã')) {
+            this.f['studentCode'].setErrors({ serverError: msg });
+          } else {
+            this.serverError.set(msg);
+          }
         }
       });
     }

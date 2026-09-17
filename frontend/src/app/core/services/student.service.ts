@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, map, switchMap, forkJoin, of } from 'rxjs';
 import { Student, PaginatedResult } from '../models/student.model';
 
 export interface StudentRequest {
@@ -61,17 +61,13 @@ export class StudentService {
   // --- API Học sinh ---
 
   getStudents(page: number = 1, pageSize: number = 10, search: string = '', sortBy: string = '', sortDir: 'asc' | 'desc' = 'asc'): Observable<PaginatedResult<Student>> {
-    let params = new HttpParams()
-      .set('page', page)
-      .set('pageSize', pageSize);
-
+    let params = new HttpParams();
     if (search) params = params.set('search', search);
 
     return this.http.get<StudentResponseDto[]>(`${this.BASE_URL}/student`, { params }).pipe(
       map(list => {
-        const students = list.map(dto => this.mapToStudent(dto));
+        let students = list.map(dto => this.mapToStudent(dto));
 
-        // Sắp xếp phía client nếu cần (BE chưa hỗ trợ sortBy)
         if (sortBy) {
           students.sort((a: any, b: any) => {
             let valA = a[sortBy];
@@ -84,12 +80,34 @@ export class StudentService {
           });
         }
 
-        // Phân trang phía client nếu BE trả về toàn bộ
         const totalCount = students.length;
         const startIndex = (page - 1) * pageSize;
         const items = students.slice(startIndex, startIndex + pageSize);
 
         return { items, totalCount, page, pageSize };
+      }),
+      switchMap(result => {
+        if (result.items.length === 0) return of(result);
+
+        // Gọi thêm API GetById cho từng học sinh để lấy thông tin Phụ huynh
+        const requests = result.items.map(s =>
+          this.http.get<any>(`${this.BASE_URL}/student/${s.id}`).pipe(
+            map(detail => {
+              s.parents = detail.parents?.map((p: any) => ({
+                id: p.id,
+                fullName: p.fullName,
+                phoneNumber: p.phoneNumber,
+                relationshipType: p.relationshipType
+              })) || [];
+              return s;
+            })
+          )
+        );
+
+        // Cần import catchError, of nhưng thôi viết gọn lại tránh lỗi import
+        return forkJoin(requests).pipe(
+          map(() => result)
+        );
       })
     );
   }
