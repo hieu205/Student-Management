@@ -1,22 +1,19 @@
 using demo_dotnet.backend.DTOs.Request;
 using demo_dotnet.backend.DTOs.Response;
-using demo_dotnet.backend.Services;
 using demo_dotnet.backend.Services.Interface;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace demo_dotnet.backend.Controllers;
 
 [ApiController]
-
-[Route("/api/v1/auth/[controller]")]
+[Route("api/v1/[controller]")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
 
     public AuthController(IAuthService authService)
     {
-        this._authService = authService;
+        _authService = authService;
     }
 
     [HttpPost("login")]
@@ -30,6 +27,6 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<AdminResponse>> Register([FromBody] RegisterAdminRequest request)
     {
         var res = await _authService.RegisterAsync(request);
-        return StatusCode(201, res);
+        return StatusCode(StatusCodes.Status201Created, res);
     }
 }
