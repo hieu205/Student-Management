@@ -181,7 +181,7 @@ import { ParentFormComponent } from './parent-form.component';
               </div>
             </div>
 
-            <a [routerLink]="['/parents/edit', parent.id]" class="mt-auto px-5 py-2 w-full rounded-full border border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-400 dark:hover:text-slate-900 transition-colors font-medium">Chỉnh sửa </a>
+            <button (click)="openEditModal(parent.id)" class="mt-auto px-5 py-2 w-full rounded-full border border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-400 dark:hover:text-slate-900 transition-colors font-medium">Chỉnh sửa</button>
           </div>
         </div>
       </div>
@@ -333,7 +333,11 @@ export class ParentListComponent implements OnInit {
           console.error('Lỗi khi tải danh sách phụ huynh:', err);
           this.isLoading.set(false);
           this.parents.set([]);
-          alert('Không thể kết nối đến máy chủ Backend. Vui lòng kiểm tra lại!');
+          if (err.status === 401) {
+            alert('Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng F5 (tải lại trang) hoặc đăng nhập lại!');
+          } else {
+            alert('Không thể kết nối đến máy chủ Backend. Vui lòng kiểm tra lại!');
+          }
         }
       });
   }

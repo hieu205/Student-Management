@@ -397,7 +397,11 @@ export class StudentListComponent implements OnInit {
           console.error('Lỗi khi tải danh sách học sinh:', err);
           this.isLoading.set(false);
           this.students.set([]);
-          alert('Không thể kết nối đến máy chủ Backend. Vui lòng kiểm tra lại!');
+          if (err.status === 401) {
+            alert('Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng F5 (tải lại trang) hoặc đăng nhập lại!');
+          } else {
+            alert('Không thể kết nối đến máy chủ Backend. Vui lòng kiểm tra lại!');
+          }
         }
       });
   }
