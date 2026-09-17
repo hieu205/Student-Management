@@ -63,7 +63,7 @@ import { ParentFormComponent } from './parent-form.component';
         <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
           <thead class="bg-gray-50 dark:bg-slate-900/50">
             <tr>
-              <th scope="col" (click)="toggleSort('fullName')" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:text-blue-600 dark:text-blue-400 transition-colors group select-none">
+              <th scope="col" (click)="toggleSort('fullName')" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:text-blue-600 dark:text-blue-400 transition-colors group select-none whitespace-nowrap">
                 <div class="flex items-center gap-1">
                   Họ và Tên
                   <svg *ngIf="sortColumn() !== 'fullName'" class="w-4 h-4 text-gray-300 group-hover:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
@@ -71,11 +71,11 @@ import { ParentFormComponent } from './parent-form.component';
                   <svg *ngIf="sortColumn() === 'fullName' && sortDirection() === 'desc'" class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                 </div>
               </th>
-              <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Điện thoại</th>
-              <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Email</th>
-              <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Nghề nghiệp</th>
-              <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Địa chỉ</th>
-              <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Thao tác</th>
+              <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">Điện thoại</th>
+              <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">Email</th>
+              <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">Nghề nghiệp</th>
+              <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">Địa chỉ</th>
+              <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">Thao tác</th>
             </tr>
           </thead>
           <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-100 dark:divide-slate-700">
@@ -108,7 +108,7 @@ import { ParentFormComponent } from './parent-form.component';
               <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600 dark:text-slate-300 align-middle">{{ parent.phoneNumber }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle">{{ parent.email || '—' }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle">{{ parent.occupation || '—' }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle truncate max-w-xs" [title]="parent.address || ''">{{ parent.address || '—' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle truncate max-w-[150px]" [title]="parent.address || ''">{{ parent.address || '—' }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium action-dropdown-container relative align-middle">
                 <button (click)="toggleDropdown(parent.id, $event)" class="text-gray-400 hover:text-blue-600 dark:text-blue-400 p-2 rounded-full hover:bg-blue-50 dark:bg-blue-900/20 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-100">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
