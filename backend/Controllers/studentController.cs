@@ -25,9 +25,9 @@ public class StudentController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] string? search = null,
-        [FromQuery] string? className = null)
+        [FromQuery] string? className = null, [FromQuery] string? mhs = null)
     {
-        var students = await _studentService.GetStudentsAsync(page, pageSize, search, className);
+        var students = await _studentService.GetStudentsAsync(page, pageSize, search, className, mhs);
         return Ok(students);
     }
 
