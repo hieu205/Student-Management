@@ -8,6 +8,8 @@ public interface IParentRepository
     Task<Parent?> GetByIdWithStudentsAsync(int id);
     Task<Parent?> GetByIdAsync(int id);
     Task<Parent?> GetByPhoneNumberAsync(string phoneNumber);
+
+    Task<Parent?> GetByEmailAsync(string? email);
     Task AddAsync(Parent parent);
 
     Task<List<Parent>> GetAllAsync(string? search);

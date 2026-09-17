@@ -19,6 +19,7 @@ public class ParentConfiguration : IEntityTypeConfiguration<Parent>
 
         builder.Property(p => p.Email).HasColumnName("email").HasMaxLength(100);
         builder.Property(p => p.Occupation).HasColumnName("occupation").HasMaxLength(100);
+        builder.Property(p => p.Address).HasColumnName("address").HasMaxLength(255);
         builder.Property(p => p.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
 
         builder.HasIndex(p => p.FullName).HasDatabaseName("idx_parent_full_name");

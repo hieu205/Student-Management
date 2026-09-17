@@ -14,7 +14,11 @@ public class StudentRepository : IStudentRepository
     }
     public async Task<List<Student>> GetAllStudent()
     {
-        return await _context.Students.ToListAsync();
+        return await _context.Students
+            .AsNoTracking() // Tối ưu bộ nhớ, bỏ qua việc tracking state cho truy vấn đọc
+            .Include(s => s.StudentParents) // Load bảng trung gian StudentParent
+                .ThenInclude(sp => sp.Parent) // Load tiếp bảng Parent từ bảng trung gian
+            .ToListAsync();
     }
     public async Task<(List<Student> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, string? search, string? className)
     {
