@@ -1,25 +1,30 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, of, throwError, delay } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { Router } from '@angular/router';
+
+export interface LoginResponse {
+  accessToken: string;
+  expiresIn: number;
+  admin: {
+    id: number;
+    username: string;
+    fullName: string;
+    email: string;
+  };
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
+  private http = inject(HttpClient);
   private router = inject(Router);
 
-  // Giả lập API Login trả về JWT dựa trên API_DOCS
-  login(credentials: { username: string; password: string }): Observable<any> {
-    if (credentials.username === 'admin01' && credentials.password === 'Admin@123') {
-      const mockResponse = {
-        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock_token_for_admin01',
-        expiresIn: 3600,
-        admin: { id: 1, username: 'admin01', fullName: 'Nguyen Van A', email: 'admin@edu.min' }
-      };
-      return of(mockResponse).pipe(delay(500));
-    } else {
-      return throwError(() => ({ message: 'Sai tài khoản hoặc mật khẩu' })).pipe(delay(500));
-    }
+  private readonly BASE_URL = 'http://localhost:5075/api/v1/auth';
+
+  login(credentials: { username: string; password: string }): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.BASE_URL}/auth/login`, credentials);
   }
 
   // --- Các hàm tiện ích quản lý Token ---
