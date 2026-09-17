@@ -133,8 +133,6 @@ import { ParentService } from '../../core/services/parent.service';
               <option value="" disabled>Chọn vai trò...</option>
               <option value="Bố">Bố</option>
               <option value="Mẹ">Mẹ</option>
-              <option value="Ông">Ông</option>
-              <option value="Bà">Bà</option>
               <option value="Người giám hộ">Người giám hộ</option>
             </select>
 
