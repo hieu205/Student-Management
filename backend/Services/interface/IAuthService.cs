@@ -6,4 +6,5 @@ namespace demo_dotnet.backend.Services.Interface;
 public interface IAuthService
 {
     Task<LoginResponseDto> LoginAsync(LoginRequest request);
+    Task<AdminResponse> RegisterAsync(RegisterAdminRequest request);
 }

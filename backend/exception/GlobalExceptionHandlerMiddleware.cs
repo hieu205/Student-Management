@@ -24,6 +24,18 @@ public class GlobalExceptionHandlerMiddleware
         {
             await HandleExceptionAsync(context, ex.StatusCode, ex.Message, ex.Errors);
         }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database update exception occurred");
+            var message = "Lỗi cập nhật cơ sở dữ liệu: vi phạm ràng buộc dữ liệu";
+            if (ex.InnerException is Npgsql.PostgresException pgEx)
+            {
+                if (pgEx.SqlState == "23505") message = "Dữ liệu đã tồn tại trong hệ thống";
+                else if (pgEx.SqlState == "23503") message = "Dữ liệu liên kết không tồn tại trong hệ thống";
+                else if (pgEx.SqlState == "23514") message = $"Giá trị không hợp lệ đối với ràng buộc hệ thống ({pgEx.ConstraintName})";
+            }
+            await HandleExceptionAsync(context, HttpStatusCode.BadRequest, message);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unhandled exception occurred");
