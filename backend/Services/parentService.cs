@@ -82,7 +82,7 @@ public class ParentService : IParentService
         if (!string.IsNullOrWhiteSpace(parentRequest.Email))
         {
             var checkMailParent = await _parentRepository.GetByEmailAsync(parentRequest.Email);
-            if (checkMailParent != null)
+            if (checkMailParent != null && checkMailParent.Id != id)
             {
                 throw new ConflictException("Phụ huynh với email này đã tồn tại");
             }

@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
+import { AdminService } from '../../core/services/admin.service';
 
 @Component({
   selector: 'app-profile',
@@ -87,69 +88,10 @@ import { AuthService } from '../../core/auth/auth.service';
           </div>
         </div>
 
-        <!-- Đổi mật khẩu -->
+        <!-- Đổi mật khẩu (Tính năng đang phát triển) -->
         <div>
           <h2 class="text-lg font-bold text-gray-800 dark:text-slate-100 mb-4 border-l-4 border-red-400 pl-3">Bảo mật (Đổi mật khẩu)</h2>
-          <p class="text-sm text-gray-500 dark:text-slate-400 mb-5">Để trống các trường này nếu bạn không muốn đổi mật khẩu.</p>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Mật khẩu hiện tại -->
-            <div>
-              <label class="block text-gray-700 dark:text-slate-300 text-sm font-bold mb-2">Mật khẩu hiện tại</label>
-              <div class="relative">
-                <input formControlName="currentPassword" [type]="showCurrentPwd ? 'text' : 'password'"
-                  class="shadow-sm appearance-none border rounded-lg w-full py-2.5 pl-3 pr-10 text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  [ngClass]="{'border-red-500': f['currentPassword'].errors, 'border-gray-300 dark:border-slate-600': !f['currentPassword'].errors}">
-                <button type="button" (click)="showCurrentPwd = !showCurrentPwd" tabindex="-1" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-slate-400 hover:text-blue-600 dark:text-blue-400 focus:outline-none">
-                  <svg *ngIf="!showCurrentPwd" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                  <svg *ngIf="showCurrentPwd" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
-                </button>
-              </div>
-              <div *ngIf="f['currentPassword'].errors?.['required']" class="text-red-500 text-xs mt-1 font-medium">
-                Vui lòng nhập mật khẩu hiện tại.
-              </div>
-              <div *ngIf="f['currentPassword'].errors?.['incorrect']" class="text-red-500 text-xs mt-1 font-medium">
-                Mật khẩu hiện tại không chính xác!
-              </div>
-            </div>
-
-            <div class="hidden md:block"></div>
-
-            <!-- Mật khẩu mới -->
-            <div>
-              <label class="block text-gray-700 dark:text-slate-300 text-sm font-bold mb-2">Mật khẩu mới</label>
-              <div class="relative">
-                <input formControlName="newPassword" [type]="showNewPwd ? 'text' : 'password'"
-                  class="shadow-sm appearance-none border border-gray-300 dark:border-slate-600 rounded-lg w-full py-2.5 pl-3 pr-10 text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                <button type="button" (click)="showNewPwd = !showNewPwd" tabindex="-1" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-slate-400 hover:text-blue-600 dark:text-blue-400 focus:outline-none">
-                  <svg *ngIf="!showNewPwd" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                  <svg *ngIf="showNewPwd" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
-                </button>
-              </div>
-              <div *ngIf="f['newPassword'].errors?.['pattern'] && f['newPassword'].touched" class="text-red-500 text-xs mt-1 font-medium">
-                Mật khẩu phải từ 8 ký tự, gồm chữ hoa, thường, số và ký tự đặc biệt.
-              </div>
-            </div>
-
-            <div class="hidden md:block"></div>
-
-            <!-- Xác nhận mật khẩu mới -->
-            <div>
-              <label class="block text-gray-700 dark:text-slate-300 text-sm font-bold mb-2">Xác nhận mật khẩu</label>
-              <div class="relative">
-                <input formControlName="confirmPassword" [type]="showConfirmPwd ? 'text' : 'password'"
-                  class="shadow-sm appearance-none border rounded-lg w-full py-2.5 pl-3 pr-10 text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  [ngClass]="{'border-red-500': profileForm.errors?.['passwordMismatch'] && f['confirmPassword'].touched, 'border-gray-300 dark:border-slate-600': !profileForm.errors?.['passwordMismatch'] || !f['confirmPassword'].touched}">
-                <button type="button" (click)="showConfirmPwd = !showConfirmPwd" tabindex="-1" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-slate-400 hover:text-blue-600 dark:text-blue-400 focus:outline-none">
-                  <svg *ngIf="!showConfirmPwd" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                  <svg *ngIf="showConfirmPwd" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
-                </button>
-              </div>
-              <div *ngIf="profileForm.errors?.['passwordMismatch'] && f['confirmPassword'].touched" class="text-red-500 text-xs mt-1 font-medium">
-                Mật khẩu xác nhận không khớp!
-              </div>
-            </div>
-          </div>
+          <p class="text-sm text-gray-500 dark:text-slate-400 mb-5 italic">Tính năng đổi mật khẩu và tên đăng nhập hiện đang được Backend phát triển và sẽ sớm ra mắt.</p>
         </div>
       </form>
 
@@ -171,14 +113,11 @@ import { AuthService } from '../../core/auth/auth.service';
 })
 export class ProfileComponent implements OnInit {
   private authService = inject(AuthService);
+  private adminService = inject(AdminService);
   private fb = inject(FormBuilder);
 
   user = this.authService.getCurrentUser();
   avatarUrl = signal<string | null>(null);
-
-  showCurrentPwd = false;
-  showNewPwd = false;
-  showConfirmPwd = false;
 
   isLoading = signal(false);
   showSuccess = signal(false);
@@ -186,11 +125,8 @@ export class ProfileComponent implements OnInit {
 
   profileForm: FormGroup = this.fb.group({
     fullName: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    currentPassword: [''],
-    newPassword: ['', [Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)]],
-    confirmPassword: ['']
-  }, { validators: this.passwordMatchValidator });
+    email: ['', [Validators.required, Validators.email]]
+  });
 
   get f() { return this.profileForm.controls; }
 
@@ -211,21 +147,6 @@ export class ProfileComponent implements OnInit {
     this.profileForm.valueChanges.subscribe(() => {
       this.isEditing.set(true);
     });
-
-    this.profileForm.get('currentPassword')?.valueChanges.subscribe(() => {
-      if (this.profileForm.get('currentPassword')?.hasError('incorrect')) {
-        this.profileForm.get('currentPassword')?.setErrors(null);
-      }
-    });
-  }
-
-  passwordMatchValidator(g: FormGroup) {
-    const newPwd = g.get('newPassword')?.value;
-    const confirmPwd = g.get('confirmPassword')?.value;
-    if (newPwd || confirmPwd) {
-      return newPwd === confirmPwd ? null : { passwordMismatch: true };
-    }
-    return null;
   }
 
   onFileSelected(event: any) {
@@ -246,53 +167,38 @@ export class ProfileComponent implements OnInit {
       return;
     }
 
-    const { currentPassword, newPassword, confirmPassword } = this.profileForm.value;
+    this.isLoading.set(true);
+    const { fullName, email } = this.profileForm.value;
 
-    // Kịch bản Đổi mật khẩu
-    if (newPassword || confirmPassword || currentPassword) {
-      // Bắt buộc nhập mật khẩu hiện tại
-      if (!currentPassword) {
-        this.profileForm.controls['currentPassword'].setErrors({ required: true });
-        return;
-      }
-
-      // Giả lập kiểm tra mật khẩu cũ từ Server (Mock: Admin@123)
-      if (currentPassword !== 'Admin@123') {
-        this.profileForm.controls['currentPassword'].setErrors({ incorrect: true });
-        return;
-      }
+    if (!this.user?.id) {
+      this.isLoading.set(false);
+      return;
     }
 
-    this.isLoading.set(true);
+    this.adminService.updateAdmin(this.user.id, { fullName, email }).subscribe({
+      next: (updatedAdmin) => {
+        this.isLoading.set(false);
+        this.isEditing.set(false);
+        this.showSuccess.set(true);
 
-    // Giả lập lưu API
-    setTimeout(() => {
-      this.isLoading.set(false);
-      this.isEditing.set(false);
-      this.showSuccess.set(true);
+        // Cập nhật local storage với thông tin mới từ server
+        const updatedUser = { ...this.user, ...updatedAdmin };
+        this.authService.setCurrentUser(updatedUser);
 
-      // Update local storage info
-      if (this.user) {
-        this.user.fullName = this.profileForm.value.fullName;
-        this.authService.setCurrentUser(this.user);
+        if (this.avatarUrl()) {
+          localStorage.setItem('user_avatar', this.avatarUrl() as string);
+        }
+
+        setTimeout(() => this.showSuccess.set(false), 3000);
+
+        // Force reload để Header cập nhật tên/avatar
+        window.dispatchEvent(new Event('storage'));
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        console.error('Lỗi khi cập nhật hồ sơ:', err);
+        alert(err.error?.message || 'Có lỗi xảy ra khi cập nhật hồ sơ.');
       }
-
-      if (this.avatarUrl()) {
-        localStorage.setItem('user_avatar', this.avatarUrl() as string);
-      }
-
-      // Xóa form pass
-      this.profileForm.patchValue({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-      this.profileForm.markAsUntouched();
-
-      setTimeout(() => this.showSuccess.set(false), 3000);
-
-      // Force reload để Header cập nhật tên/avatar
-      window.dispatchEvent(new Event('storage'));
-    }, 800);
+    });
   }
 }
