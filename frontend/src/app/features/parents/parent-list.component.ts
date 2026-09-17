@@ -169,21 +169,21 @@ import { ParentFormComponent } from './parent-form.component';
             <p class="text-green-600 dark:text-green-400 font-medium text-sm mb-4">Phụ huynh</p>
 
             <div class="w-full space-y-2 text-sm text-left border-t border-gray-100 dark:border-slate-700 pt-4 mb-5">
-              <div class="flex justify-between items-center">
-                <span class="text-gray-500 dark:text-slate-400">Điện thoại:</span>
-                <span class="font-mono text-gray-700 dark:text-slate-200">{{ parent.phoneNumber }}</span>
+              <div class="flex justify-between items-center gap-2">
+                <span class="text-gray-500 dark:text-slate-400 whitespace-nowrap shrink-0">Điện thoại:</span>
+                <span class="font-mono text-gray-700 dark:text-slate-200 truncate">{{ parent.phoneNumber }}</span>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-gray-500 dark:text-slate-400">Email:</span>
-                <span class="font-medium text-gray-700 dark:text-slate-200 truncate ml-2">{{ parent.email || '—' }}</span>
+              <div class="flex justify-between items-center gap-2">
+                <span class="text-gray-500 dark:text-slate-400 whitespace-nowrap shrink-0">Email:</span>
+                <span class="font-medium text-gray-700 dark:text-slate-200 truncate" [title]="parent.email || ''">{{ parent.email || '—' }}</span>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-gray-500 dark:text-slate-400">Nghề nghiệp:</span>
-                <span class="font-medium text-gray-700 dark:text-slate-200">{{ parent.occupation || '—' }}</span>
+              <div class="flex justify-between items-center gap-2">
+                <span class="text-gray-500 dark:text-slate-400 whitespace-nowrap shrink-0">Nghề nghiệp:</span>
+                <span class="font-medium text-gray-700 dark:text-slate-200 truncate" [title]="parent.occupation || ''">{{ parent.occupation || '—' }}</span>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-gray-500 dark:text-slate-400">Địa chỉ:</span>
-                <span class="font-medium text-gray-700 dark:text-slate-200 truncate ml-2" [title]="parent.address || ''">{{ parent.address || '—' }}</span>
+              <div class="flex justify-between items-center gap-2">
+                <span class="text-gray-500 dark:text-slate-400 whitespace-nowrap shrink-0">Địa chỉ:</span>
+                <span class="font-medium text-gray-700 dark:text-slate-200 truncate" [title]="parent.address || ''">{{ parent.address || '—' }}</span>
               </div>
             </div>
 

@@ -91,12 +91,13 @@ import { StudentFormComponent } from './student-form.component';
               <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Ngày sinh</th>
               <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Giới tính</th>
               <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Phụ huynh đã gán</th>
+              <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Địa chỉ</th>
               <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Thao tác</th>
             </tr>
           </thead>
           <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-100 dark:divide-slate-700">
             <tr *ngIf="isLoading()">
-              <td colspan="7" class="px-6 py-12 text-center">
+              <td colspan="8" class="px-6 py-12 text-center">
                 <svg class="animate-spin h-8 w-8 mx-auto text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -105,7 +106,7 @@ import { StudentFormComponent } from './student-form.component';
               </td>
             </tr>
             <tr *ngIf="!isLoading() && students().length === 0">
-              <td colspan="7" class="px-6 py-12 text-center text-gray-500 dark:text-slate-400">
+              <td colspan="8" class="px-6 py-12 text-center text-gray-500 dark:text-slate-400">
                 <div class="bg-gray-50 dark:bg-slate-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
                   <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -150,6 +151,7 @@ import { StudentFormComponent } from './student-form.component';
                   </div>
                 </div>
               </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle truncate max-w-xs" [title]="student.address || ''">{{ student.address || '—' }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium action-dropdown-container relative align-middle">
                 <button (click)="toggleDropdown(student.id, $event)" class="text-gray-400 hover:text-blue-600 dark:text-blue-400 p-2 rounded-full hover:bg-blue-50 dark:bg-blue-900/20 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-100">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
@@ -215,17 +217,21 @@ import { StudentFormComponent } from './student-form.component';
             <p class="text-blue-600 dark:text-blue-400 font-medium text-sm mb-4">{{ student.studentCode }}</p>
 
             <div class="w-full space-y-2 text-sm text-left border-t border-gray-100 dark:border-slate-700 pt-4 mb-5">
-              <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-slate-400">Giới tính:</span>
-                <span class="font-medium text-gray-700 dark:text-slate-200">{{ student.gender === 'Male' ? 'Nam' : 'Nữ' }}</span>
+              <div class="flex justify-between items-center gap-2">
+                <span class="text-gray-500 dark:text-slate-400 whitespace-nowrap shrink-0">Giới tính:</span>
+                <span class="font-medium text-gray-700 dark:text-slate-200 truncate">{{ student.gender === 'Male' ? 'Nam' : 'Nữ' }}</span>
               </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-slate-400">Lớp:</span>
-                <span class="font-medium text-gray-700 dark:text-slate-200">{{ student.className }}</span>
+              <div class="flex justify-between items-center gap-2">
+                <span class="text-gray-500 dark:text-slate-400 whitespace-nowrap shrink-0">Lớp:</span>
+                <span class="font-medium text-gray-700 dark:text-slate-200 truncate">{{ student.className }}</span>
               </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-slate-400">Ngày sinh:</span>
-                <span class="font-medium text-gray-700 dark:text-slate-200">{{ student.dateOfBirth | date:'dd/MM/yyyy' }}</span>
+              <div class="flex justify-between items-center gap-2">
+                <span class="text-gray-500 dark:text-slate-400 whitespace-nowrap shrink-0">Ngày sinh:</span>
+                <span class="font-medium text-gray-700 dark:text-slate-200 truncate">{{ student.dateOfBirth | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="flex justify-between items-center gap-2">
+                <span class="text-gray-500 dark:text-slate-400 whitespace-nowrap shrink-0">Địa chỉ:</span>
+                <span class="font-medium text-gray-700 dark:text-slate-200 truncate" [title]="student.address || ''">{{ student.address || '—' }}</span>
               </div>
             </div>
 
