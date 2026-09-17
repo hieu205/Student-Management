@@ -9,6 +9,7 @@ export interface ParentRequest {
   phoneNumber: string;
   email?: string;
   occupation?: string;
+  address?: string;
 }
 
 @Injectable({
@@ -62,7 +63,8 @@ export class ParentService {
       fullName: data.fullName,
       phoneNumber: data.phoneNumber,
       email: data.email || undefined,
-      occupation: data.occupation || undefined
+      occupation: data.occupation || undefined,
+      address: data.address || undefined
     };
     return this.http.post<Parent>(`${this.BASE_URL}/parent`, body);
   }
@@ -72,7 +74,8 @@ export class ParentService {
       fullName: data.fullName,
       phoneNumber: data.phoneNumber,
       email: data.email || undefined,
-      occupation: data.occupation || undefined
+      occupation: data.occupation || undefined,
+      address: data.address || undefined
     };
     return this.http.put<Parent>(`${this.BASE_URL}/parent/${id}`, body);
   }
