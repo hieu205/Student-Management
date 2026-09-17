@@ -3,7 +3,6 @@ using demo_dotnet.backend.DTOs.Request;
 using demo_dotnet.backend.DTOs.Response;
 using demo_dotnet.backend.exception;
 using demo_dotnet.backend.Models;
-using demo_dotnet.backend.Repositories.Interface;
 using demo_dotnet.backend.Services.Interface;
 
 namespace demo_dotnet.backend.Services;
@@ -85,7 +84,7 @@ public class StudentService : IStudentService
         {
             Mhs = request.Mhs,
             FullName = request.FullName,
-            DateOfBirth = request.DateOfBirth,
+            DateOfBirth = ParseDateOnly(request.DateOfBirth),
             Gender = request.Gender,
             ClassName = request.ClassName,
             Address = request.Address
@@ -127,7 +126,7 @@ public class StudentService : IStudentService
             Id = student.Id,
             Mhs = student.Mhs,
             FullName = student.FullName,
-            DateOfBirth = student.DateOfBirth,
+            DateOfBirth = student.DateOfBirth?.ToString("yyyy-MM-dd"),
             Gender = student.Gender,
             ClassName = student.ClassName,
             Address = student.Address,
@@ -155,7 +154,7 @@ public class StudentService : IStudentService
 
         student.Mhs = request.Mhs;
         student.FullName = request.FullName;
-        student.DateOfBirth = request.DateOfBirth;
+        student.DateOfBirth = ParseDateOnly(request.DateOfBirth);
         student.Gender = request.Gender;
         student.ClassName = request.ClassName;
         student.Address = request.Address;
@@ -226,8 +225,12 @@ public class StudentService : IStudentService
         return new StudentResponseDto
         {
             Id = student.Id,
+            Mhs = student.Mhs,
             FullName = student.FullName,
-            ClassName = student.ClassName
+            DateOfBirth = student.DateOfBirth?.ToString("yyyy-MM-dd"),
+            Gender = student.Gender,
+            ClassName = student.ClassName,
+            Address = student.Address
         };
     }
 
@@ -236,9 +239,25 @@ public class StudentService : IStudentService
         return new StudentDetailResponseDto
         {
             Id = student.Id,
+            Mhs = student.Mhs,
             FullName = student.FullName,
-            ClassName = student.ClassName
-            // TODO: map thêm Parents = student.StudentParents.Select(...) nếu StudentDetailResponseDto có field Parents
+            DateOfBirth = student.DateOfBirth?.ToString("yyyy-MM-dd"),
+            Gender = student.Gender,
+            ClassName = student.ClassName,
+            Address = student.Address,
+            Parents = student.StudentParents?.Select(sp => new ParentRelatedDto
+            {
+                Id = sp.Parent?.Id ?? sp.ParentId,
+                FullName = sp.Parent?.FullName ?? string.Empty,
+                PhoneNumber = sp.Parent?.PhoneNumber ?? string.Empty,
+                RelationshipType = sp.RelationshipType
+            }).ToList() ?? new List<ParentRelatedDto>()
         };
+    }
+
+    private static DateOnly? ParseDateOnly(string? dateStr)
+    {
+        if (string.IsNullOrWhiteSpace(dateStr)) return null;
+        return DateOnly.TryParse(dateStr, out var dob) ? dob : null;
     }
 }

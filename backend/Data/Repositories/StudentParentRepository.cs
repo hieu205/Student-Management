@@ -1,9 +1,9 @@
 using demo_dotnet.backend.Data;
 using demo_dotnet.backend.Models;
-using demo_dotnet.backend.Repositories.Interface;
+using demo_dotnet.backend.Data.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace demo_dotnet.backend.Repositories;
+namespace demo_dotnet.backend.Data.Repositories;
 
 public class StudentParentRepository : IStudentParentRepository
 {

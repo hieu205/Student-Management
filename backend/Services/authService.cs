@@ -7,8 +7,9 @@ using demo_dotnet.backend.DTOs.Response;
 using demo_dotnet.backend.exception;
 using demo_dotnet.backend.Services.Interface;
 using Microsoft.IdentityModel.Tokens;
+using BC = BCrypt.Net.BCrypt;
 
-namespace demo_dotnet.backend.Services; // Chú ý: namespace ở đây không có ".Interface"
+namespace demo_dotnet.backend.Services;
 
 public class AuthService : IAuthService
 {
@@ -25,13 +26,14 @@ public class AuthService : IAuthService
     {
         var admin = await _adminRepository.GetByUsernameAsync(request.Username);
 
-        if (admin == null || admin.PasswordHash != request.Password)
+        if (admin == null || !BC.Verify(request.Password, admin.PasswordHash))
         {
             throw new UnauthorizedException("Sai tài khoản hoặc mật khẩu");
         }
 
         var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtSecret = _configuration["Jwt:Secret"] ?? "SuperSecretKeyForJWTAuthentication1234567890!";
+        var jwtSecret = _configuration["Jwt:Secret"]
+            ?? throw new InvalidOperationException("Jwt:Secret chưa được cấu hình trong appsettings.json");
         var key = Encoding.UTF8.GetBytes(jwtSecret);
 
         var tokenDescriptor = new SecurityTokenDescriptor
@@ -57,7 +59,7 @@ public class AuthService : IAuthService
                 Id = admin.Id,
                 Username = admin.Username,
                 FullName = admin.FullName,
-                Gmail = admin.Email
+                Email = admin.Email ?? string.Empty
             }
         };
     }

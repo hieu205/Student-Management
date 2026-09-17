@@ -1,6 +1,6 @@
 using demo_dotnet.backend.Models;
 
-namespace demo_dotnet.backend.Repositories.Interface;
+namespace demo_dotnet.backend.Data.Interfaces;
 
 public interface IStudentParentRepository
 {

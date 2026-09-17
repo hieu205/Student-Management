@@ -27,7 +27,7 @@ public class AdminService : IAdminService
             Id = admin.Id,
             Username = admin.Username,
             FullName = admin.FullName,
-            Gmail = admin.Email
+            Email = admin.Email ?? string.Empty
         };
     }
 }
