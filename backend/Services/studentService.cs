@@ -23,7 +23,7 @@ public class StudentService : IStudentService
         _studentParentRepository = studentParentRepository;
     }
 
-    public async Task<List<StudentResponseDto>> GetStudentsAsync(int page, int pageSize, string? search, string? className)
+    public async Task<List<StudentDetailResponseDto>> GetStudentsAsync(int page, int pageSize, string? search, string? className)
     {
         var students = await _studentRepository.GetAllStudent();
 
@@ -36,7 +36,7 @@ public class StudentService : IStudentService
             students = students.Where(s => s.ClassName == className).ToList();
         }
 
-        return students.Select(MapToResponseDto).ToList();
+        return students.Select(MapToDetailDto).ToList();
     }
 
     public async Task<StudentDetailResponseDto> GetStudentByIdAsync(int id)

@@ -46,11 +46,20 @@ public class ParentService : IParentService
         {
             throw new ConflictException("Phụ huynh với số điện thoại này đã tồn tại");
         }
+        if (!string.IsNullOrWhiteSpace(parentRequest.Email))
+        {
+            var checkMailParent = await _parentRepository.GetByEmailAsync(parentRequest.Email);
+            if (checkMailParent != null)
+            {
+                throw new ConflictException("Phụ huynh với email này đã tồn tại");
+            }
+        }
         var parent = new Parent
         {
             FullName = parentRequest.FullName,
             PhoneNumber = parentRequest.PhoneNumber,
             Email = parentRequest.Email,
+            Address = parentRequest.Address,
             Occupation = parentRequest.Occupation
         };
         await _parentRepository.AddAsync(parent);
@@ -70,10 +79,19 @@ public class ParentService : IParentService
         {
             throw new ConflictException("Số điện thoại này đã được đăng ký");
         }
+        if (!string.IsNullOrWhiteSpace(parentRequest.Email))
+        {
+            var checkMailParent = await _parentRepository.GetByEmailAsync(parentRequest.Email);
+            if (checkMailParent != null)
+            {
+                throw new ConflictException("Phụ huynh với email này đã tồn tại");
+            }
+        }
 
         items.Email = parentRequest.Email;
         items.PhoneNumber = parentRequest.PhoneNumber;
         items.Occupation = parentRequest.Occupation;
+        items.Address = parentRequest.Address;
         items.FullName = parentRequest.FullName;
 
         _parentRepository.Update(items);
@@ -101,6 +119,7 @@ public class ParentService : IParentService
             FullName = parent.FullName,
             PhoneNumber = parent.PhoneNumber,
             Email = parent.Email,
+            Address = parent.Address,
             Occupation = parent.Occupation
         };
     }

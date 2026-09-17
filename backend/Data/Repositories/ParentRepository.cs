@@ -46,6 +46,11 @@ public class ParentRepository : IParentRepository
         return (items, totalCount);
     }
 
+    public async Task<Parent?> GetByEmailAsync(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return null;
+        return await _context.Parents.FirstOrDefaultAsync(p => p.Email == email);
+    }
     public async Task<Parent?> GetByIdWithStudentsAsync(int id)
     {
         return await _context.Parents
