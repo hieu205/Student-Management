@@ -58,10 +58,13 @@ import { ParentService } from '../../core/services/parent.service';
             <!-- Email -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Email</label>
-              <input type="email" formControlName="email"
+              <input type="email" formControlName="email" (input)="f['email'].setErrors(null)"
                 class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
-                [ngClass]="{'border-red-500': submitted() && f['email'].errors}">
-              <p *ngIf="submitted() && f['email'].errors?.['email']" class="text-red-500 text-xs mt-1">Email không hợp lệ</p>
+                [ngClass]="{'border-red-500': (submitted() || f['email'].dirty) && f['email'].errors}">
+              <div *ngIf="(submitted() || f['email'].dirty) && f['email'].errors" class="text-red-500 text-xs mt-1">
+                <p *ngIf="f['email'].errors?.['email']">Email không hợp lệ</p>
+                <p *ngIf="f['email'].errors?.['serverError']" class="font-semibold">{{ f['email'].errors?.['serverError'] }}</p>
+              </div>
             </div>
 
             <!-- Nghề nghiệp -->
