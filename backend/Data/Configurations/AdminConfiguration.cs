@@ -18,6 +18,7 @@ public class AdminConfiguration : IEntityTypeConfiguration<Admin>
         builder.Property(a => a.PasswordHash).HasColumnName("password_hash").HasMaxLength(255).IsRequired();
         builder.Property(a => a.FullName).HasColumnName("full_name").HasMaxLength(100).IsRequired();
         builder.Property(a => a.Email).HasColumnName("email").HasMaxLength(100);
+        builder.Property(a => a.RoleId).HasColumnName("role_id").HasDefaultValue(1);
         builder.Property(a => a.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
     }
 }

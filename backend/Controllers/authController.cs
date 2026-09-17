@@ -25,4 +25,11 @@ public class AuthController : ControllerBase
         var res = await _authService.LoginAsync(loginRequest);
         return Ok(res);
     }
+
+    [HttpPost("register")]
+    public async Task<ActionResult<AdminResponse>> Register([FromBody] RegisterAdminRequest request)
+    {
+        var res = await _authService.RegisterAsync(request);
+        return StatusCode(201, res);
+    }
 }

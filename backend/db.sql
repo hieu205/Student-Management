@@ -10,6 +10,7 @@ CREATE TABLE admin (
     password_hash VARCHAR(255) NOT NULL,
     full_name     VARCHAR(100) NOT NULL,
     email         VARCHAR(100),
+    role_id       INT NOT NULL DEFAULT 1,
     created_at    TIMESTAMP NOT NULL DEFAULT NOW()
 );
  
@@ -17,11 +18,10 @@ CREATE TABLE admin (
 CREATE TABLE student (
     id             SERIAL PRIMARY KEY,
     full_name      VARCHAR(100) NOT NULL,
-    date_of_birth  DATE,
+    date_of_birth  VARCHAR(50),
     gender         VARCHAR(10) CHECK (gender IN ('Male', 'Female')),
     class_name     VARCHAR(20),
-    address        VARCHAR(255),
-    created_at     TIMESTAMP NOT NULL DEFAULT NOW()
+    address        VARCHAR(255)
 );
  
 -- Bảng Parent

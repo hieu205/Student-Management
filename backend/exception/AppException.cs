@@ -15,6 +15,12 @@ public class AppException : Exception
     }
 }
 
+public class BadRequestException : AppException
+{
+    public BadRequestException(string message, object? errors = null)
+        : base(message, HttpStatusCode.BadRequest, errors) { }
+}
+
 public class NotFoundException : AppException
 {
     public NotFoundException(string message) : base(message, HttpStatusCode.NotFound) { }

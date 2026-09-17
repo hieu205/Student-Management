@@ -56,7 +56,7 @@ public class StudentService : IStudentService
         var existingStudent = await _studentRepository.GetByMhsAsync(request.Mhs);
         if (existingStudent != null)
         {
-            throw new Exception($"Mã học sinh '{request.Mhs}' đã tồn tại");
+            throw new ConflictException($"Mã học sinh '{request.Mhs}' đã tồn tại");
         }
 
         // 2. TÌM VÀ KIỂM TRA PHỤ HUYNH TRƯỚC (Validate trước khi ghi bất kỳ dữ liệu nào vào DB)
@@ -75,7 +75,7 @@ public class StudentService : IStudentService
                     throw new NotFoundException($"Không tìm thấy phụ huynh với Id = {parentRequest.ParentId}");
                 }
 
-                parentEntities.Add((parent, parentRequest.RelationshipType));
+                parentEntities.Add((parent, NormalizeRelationshipType(parentRequest.RelationshipType)));
             }
         }
 
@@ -84,8 +84,8 @@ public class StudentService : IStudentService
         {
             Mhs = request.Mhs,
             FullName = request.FullName,
-            DateOfBirth = ParseDateOnly(request.DateOfBirth),
-            Gender = request.Gender,
+            DateOfBirth = request.DateOfBirth,
+            Gender = NormalizeGender(request.Gender),
             ClassName = request.ClassName,
             Address = request.Address
         };
@@ -126,7 +126,7 @@ public class StudentService : IStudentService
             Id = student.Id,
             Mhs = student.Mhs,
             FullName = student.FullName,
-            DateOfBirth = student.DateOfBirth?.ToString("yyyy-MM-dd"),
+            DateOfBirth = student.DateOfBirth,
             Gender = student.Gender,
             ClassName = student.ClassName,
             Address = student.Address,
@@ -148,14 +148,14 @@ public class StudentService : IStudentService
             var existingStudent = await _studentRepository.GetByMhsAsync(request.Mhs);
             if (existingStudent != null)
             {
-                throw new Exception($"Ma hoc sinh '{request.Mhs}' da ton tai");
+                throw new ConflictException($"Mã học sinh '{request.Mhs}' đã tồn tại");
             }
         }
 
         student.Mhs = request.Mhs;
         student.FullName = request.FullName;
-        student.DateOfBirth = ParseDateOnly(request.DateOfBirth);
-        student.Gender = request.Gender;
+        student.DateOfBirth = request.DateOfBirth;
+        student.Gender = NormalizeGender(request.Gender);
         student.ClassName = request.ClassName;
         student.Address = request.Address;
 
@@ -185,17 +185,23 @@ public class StudentService : IStudentService
             throw new NotFoundException($"Khong tim thay student co id {studentId}");
         }
 
+        var parent = await _parentRepository.GetByIdAsync(request.ParentId);
+        if (parent == null)
+        {
+            throw new NotFoundException($"Không tìm thấy phụ huynh với Id = {request.ParentId}");
+        }
+
         var alreadyLinked = await _studentRepository.HasParentRelationAsync(studentId, request.ParentId);
         if (alreadyLinked)
         {
-            throw new Exception("Parent nay da duoc lien ket voi student roi");
+            throw new ConflictException("Phụ huynh này đã được liên kết với học sinh rồi");
         }
 
         var relation = new StudentParent
         {
             StudentId = studentId,
-            ParentId = request.ParentId
-            // TODO: nếu StudentParent có thêm field (VD: Relationship = "Bố"/"Mẹ") thì map thêm
+            ParentId = request.ParentId,
+            RelationshipType = NormalizeRelationshipType(request.RelationshipType)
         };
 
         await _studentRepository.AddParentRelationAsync(relation);
@@ -220,6 +226,34 @@ public class StudentService : IStudentService
         await _studentRepository.SaveChangesAsync();
     }
 
+    private static string NormalizeRelationshipType(string? rel)
+    {
+        if (string.IsNullOrWhiteSpace(rel))
+            throw new BadRequestException("Loại quan hệ không được để trống. Chỉ chấp nhận 'Father', 'Mother' hoặc 'Guardian'.");
+
+        var trimmed = rel.Trim();
+        if (trimmed.Equals("Father", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("Bố", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("Ba", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("Cha", StringComparison.OrdinalIgnoreCase))
+            return "Father";
+        if (trimmed.Equals("Mother", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("Mẹ", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("Má", StringComparison.OrdinalIgnoreCase))
+            return "Mother";
+        if (trimmed.Equals("Guardian", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("Người giám hộ", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("Giam ho", StringComparison.OrdinalIgnoreCase))
+            return "Guardian";
+
+        throw new BadRequestException($"Loại quan hệ '{rel}' không hợp lệ. Chỉ chấp nhận 'Father', 'Mother' hoặc 'Guardian'.");
+    }
+
+    private static string? NormalizeGender(string? gender)
+    {
+        if (string.IsNullOrWhiteSpace(gender)) return null;
+        var trimmed = gender.Trim();
+        if (trimmed.Equals("Male", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("Nam", StringComparison.OrdinalIgnoreCase))
+            return "Male";
+        if (trimmed.Equals("Female", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("Nữ", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("Nu", StringComparison.OrdinalIgnoreCase))
+            return "Female";
+
+        throw new BadRequestException($"Giới tính '{gender}' không hợp lệ. Chỉ chấp nhận 'Male' hoặc 'Female'.");
+    }
+
     private static StudentResponseDto MapToResponseDto(Student student)
     {
         return new StudentResponseDto
@@ -227,7 +261,7 @@ public class StudentService : IStudentService
             Id = student.Id,
             Mhs = student.Mhs,
             FullName = student.FullName,
-            DateOfBirth = student.DateOfBirth?.ToString("yyyy-MM-dd"),
+            DateOfBirth = student.DateOfBirth,
             Gender = student.Gender,
             ClassName = student.ClassName,
             Address = student.Address
@@ -241,7 +275,7 @@ public class StudentService : IStudentService
             Id = student.Id,
             Mhs = student.Mhs,
             FullName = student.FullName,
-            DateOfBirth = student.DateOfBirth?.ToString("yyyy-MM-dd"),
+            DateOfBirth = student.DateOfBirth,
             Gender = student.Gender,
             ClassName = student.ClassName,
             Address = student.Address,
@@ -253,11 +287,5 @@ public class StudentService : IStudentService
                 RelationshipType = sp.RelationshipType
             }).ToList() ?? new List<ParentRelatedDto>()
         };
-    }
-
-    private static DateOnly? ParseDateOnly(string? dateStr)
-    {
-        if (string.IsNullOrWhiteSpace(dateStr)) return null;
-        return DateOnly.TryParse(dateStr, out var dob) ? dob : null;
     }
 }

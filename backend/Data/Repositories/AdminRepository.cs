@@ -22,4 +22,14 @@ public class AdminRepository : IAdminRepository
     {
         return await _context.Admins.FindAsync(id);
     }
+
+    public async Task AddAsync(Admin admin)
+    {
+        await _context.Admins.AddAsync(admin);
+    }
+
+    public async Task SaveChangesAsync()
+    {
+        await _context.SaveChangesAsync();
+    }
 }

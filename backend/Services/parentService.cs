@@ -38,13 +38,13 @@ public class ParentService : IParentService
     {
         if (parentRequest == null)
         {
-            throw new Exception("Du lieu dau vao khong hop le");
+            throw new BadRequestException("Dữ liệu đầu vào không hợp lệ");
         }
 
         var checkParent = await _parentRepository.GetByPhoneNumberAsync(parentRequest.PhoneNumber);
         if (checkParent != null)
         {
-            throw new Exception("Parent da ton tai");
+            throw new ConflictException("Phụ huynh với số điện thoại này đã tồn tại");
         }
         var parent = new Parent
         {
@@ -68,7 +68,7 @@ public class ParentService : IParentService
         var checkPhoneParent = await _parentRepository.GetByPhoneNumberAsync(parentRequest.PhoneNumber);
         if (checkPhoneParent != null && checkPhoneParent.Id != id)
         {
-            throw new Exception("So dien thoai nay da duoc dang ki");
+            throw new ConflictException("Số điện thoại này đã được đăng ký");
         }
 
         items.Email = parentRequest.Email;

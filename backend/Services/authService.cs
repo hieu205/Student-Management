@@ -5,6 +5,7 @@ using demo_dotnet.backend.Data.Interfaces;
 using demo_dotnet.backend.DTOs.Request;
 using demo_dotnet.backend.DTOs.Response;
 using demo_dotnet.backend.exception;
+using demo_dotnet.backend.Models;
 using demo_dotnet.backend.Services.Interface;
 using Microsoft.IdentityModel.Tokens;
 using BC = BCrypt.Net.BCrypt;
@@ -59,8 +60,40 @@ public class AuthService : IAuthService
                 Id = admin.Id,
                 Username = admin.Username,
                 FullName = admin.FullName,
-                Email = admin.Email ?? string.Empty
+                Email = admin.Email ?? string.Empty,
+                RoleId = admin.RoleId
             }
+        };
+    }
+
+    public async Task<AdminResponse> RegisterAsync(RegisterAdminRequest request)
+    {
+        var existingAdmin = await _adminRepository.GetByUsernameAsync(request.Username);
+        if (existingAdmin != null)
+        {
+            throw new ConflictException("Tài khoản đã tồn tại");
+        }
+
+        var admin = new Admin
+        {
+            Username = request.Username.Trim(),
+            PasswordHash = BC.HashPassword(request.Password),
+            FullName = request.FullName.Trim(),
+            Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
+            RoleId = 1,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _adminRepository.AddAsync(admin);
+        await _adminRepository.SaveChangesAsync();
+
+        return new AdminResponse
+        {
+            Id = admin.Id,
+            Username = admin.Username,
+            FullName = admin.FullName,
+            Email = admin.Email ?? string.Empty,
+            RoleId = admin.RoleId
         };
     }
 }
