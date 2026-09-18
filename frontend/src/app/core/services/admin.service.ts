@@ -39,9 +39,36 @@ export class AdminService {
   getAllAdmins(): Observable<AdminResponse[]> {
     // Temporary mock data until BE is ready
     return of([
-      { id: 1, username: 'admin_tong', fullName: 'Super Admin', email: 'super@admin.com', createdAt: new Date().toISOString(), permissions: ['manage_students', 'manage_parents', 'manage_rbac'] },
-      { id: 2, username: 'admin_con1', fullName: 'Trần Văn Phụ', email: 'phu@admin.com', createdAt: new Date().toISOString(), permissions: ['manage_parents'] },
-      { id: 3, username: 'admin_con2', fullName: 'Lê Học Sinh', email: 'hs@admin.com', createdAt: new Date().toISOString(), permissions: ['manage_students'] },
+      {
+        id: 1,
+        username: 'admin_tong',
+        fullName: 'Super Admin',
+        email: 'super@admin.com',
+        createdAt: new Date().toISOString(),
+        permissions: [
+          'student:read', 'student:create', 'student:update', 'student:delete',
+          'parent:read', 'parent:create', 'parent:update', 'parent:delete',
+          'student_parent:assign', 'student_parent:remove',
+          'admin:read', 'admin:create', 'admin:update', 'admin:delete',
+          'role:read', 'role:manage', 'admin_permission:assign'
+        ] // All 17 permissions
+      },
+      {
+        id: 2,
+        username: 'admin_con1',
+        fullName: 'Trần Văn Phụ',
+        email: 'phu@admin.com',
+        createdAt: new Date().toISOString(),
+        permissions: ['student:read', 'parent:read', 'student_parent:assign']
+      },
+      {
+        id: 3,
+        username: 'admin_con2',
+        fullName: 'Lê Học Sinh',
+        email: 'hs@admin.com',
+        createdAt: new Date().toISOString(),
+        permissions: ['student:read', 'student:create']
+      },
     ]);
   }
 

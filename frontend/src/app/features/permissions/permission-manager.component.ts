@@ -3,10 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, AdminResponse } from '../../core/services/admin.service';
 
-interface PermissionModule {
-  name: string;
+interface PermissionItem {
   code: string;
-  actions: { code: string; label: string }[];
+  label: string;
+  implicitReads?: string[]; // Nếu tick quyền này, tự động tick các quyền read tương ứng
+}
+
+interface PermissionGroup {
+  name: string;
+  items: PermissionItem[];
 }
 
 @Component({
@@ -55,7 +60,7 @@ interface PermissionModule {
                 <h3 class="font-semibold text-gray-800 dark:text-slate-200 truncate flex items-center justify-between"
                     [ngClass]="{'text-blue-700 dark:text-blue-400': selectedUser()?.id === user.id}">
                   {{ user.fullName }}
-                  <span *ngIf="user.permissions && user.permissions.length > 0" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">Có quyền</span>
+                  <span *ngIf="user.permissions && user.permissions.length > 0" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">{{ user.permissions.length }} quyền</span>
                 </h3>
                 <p class="text-xs text-gray-500 dark:text-slate-400 truncate">{{ user.email }}</p>
               </div>
@@ -64,7 +69,7 @@ interface PermissionModule {
         </div>
       </div>
 
-      <!-- Right Column: Permission Matrix -->
+      <!-- Right Column: Checkbox Groups -->
       <div class="w-full md:w-2/3 flex flex-col bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden h-auto md:h-[calc(100vh-8rem)]">
 
         <div *ngIf="!selectedUser()" class="flex-1 flex flex-col items-center justify-center p-8 text-gray-400 dark:text-slate-500">
@@ -74,57 +79,60 @@ interface PermissionModule {
         </div>
 
         <ng-container *ngIf="selectedUser()">
-          <div class="p-6 border-b border-gray-100 dark:border-slate-700 flex items-start gap-4 bg-gray-50/50 dark:bg-slate-900/50">
+          <div class="p-6 border-b border-gray-100 dark:border-slate-700 flex items-start gap-4 bg-gray-50/50 dark:bg-slate-900/50 shrink-0">
             <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-2xl shadow-md shrink-0">
               {{ selectedUser()!.fullName.charAt(0) || 'U' }}
             </div>
-            <div>
+            <div class="flex-1">
               <h2 class="text-2xl font-bold text-gray-800 dark:text-slate-100">{{ selectedUser()!.fullName }}</h2>
               <p class="text-gray-500 dark:text-slate-400 mt-1">Username: <span class="font-medium text-gray-700 dark:text-slate-300">{{ selectedUser()!.username }}</span></p>
-              <p class="text-gray-500 dark:text-slate-400 text-sm">Email: {{ selectedUser()!.email || 'Trống' }}</p>
             </div>
-          </div>
-
-          <div class="p-6 flex-1 overflow-y-auto">
-            <div class="flex justify-between items-end mb-4">
-              <h3 class="text-lg font-bold text-gray-800 dark:text-slate-100">Ma trận Phân quyền</h3>
-              <button (click)="toggleAllPermissions()" class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 font-medium">
-                Chọn tất cả / Bỏ chọn
+            <div class="text-right flex gap-2">
+               <button (click)="selectAllPermissions()" class="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50 dark:text-blue-400 font-medium transition-colors">
+                Chọn tất cả
+              </button>
+              <button (click)="deselectAllPermissions()" class="px-3 py-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg text-sm text-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700 dark:text-gray-300 font-medium transition-colors">
+                Bỏ chọn tất cả
               </button>
             </div>
+          </div>
 
-            <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
-              <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
-                <thead class="bg-gray-50 dark:bg-slate-800">
-                  <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                      Nhóm chức năng
-                    </th>
-                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider" *ngFor="let action of commonActions">
-                      {{ action.label }}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
-                  <tr *ngFor="let module of modules" class="hover:bg-gray-50 dark:hover:bg-slate-800/50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-slate-200">
-                      {{ module.name }}
-                    </td>
-                    <td *ngFor="let action of module.actions" class="px-4 py-4 whitespace-nowrap text-center">
-                      <div class="flex justify-center items-center h-full">
-                        <input type="checkbox"
-                               [checked]="hasPermission(module.code, action.code)"
-                               (change)="togglePermission(module.code, action.code)"
-                               class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer">
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="p-6 flex-1 overflow-y-auto bg-gray-50/30 dark:bg-slate-900/30">
+            <div class="space-y-6">
+
+              <!-- Map through Permission Groups -->
+              <div *ngFor="let group of groups" class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+
+                <!-- Group Header -->
+                <div class="bg-gray-50 dark:bg-slate-800/80 px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center">
+                  <h4 class="font-bold text-gray-800 dark:text-slate-100 flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                    {{ group.name }}
+                  </h4>
+                </div>
+
+                <!-- Group Items -->
+                <div class="p-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <label *ngFor="let item of group.items" class="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer group/label transition-colors"
+                         [ngClass]="{'bg-blue-50/50 dark:bg-blue-900/10': hasPermission(item.code)}">
+                    <div class="flex items-center h-5 mt-1">
+                      <input type="checkbox"
+                             [checked]="hasPermission(item.code)"
+                             (change)="togglePermission(item)"
+                             class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer">
+                    </div>
+                    <div class="flex-1 text-sm mt-0.5">
+                      <span class="font-medium text-gray-700 dark:text-slate-200 group-hover/label:text-blue-600 dark:group-hover/label:text-blue-400 transition-colors">{{ item.label }}</span>
+                    </div>
+                  </label>
+                </div>
+
+              </div>
+
             </div>
           </div>
 
-          <div class="p-4 border-t border-gray-100 dark:border-slate-700 flex justify-end gap-3 bg-gray-50 dark:bg-slate-900">
+          <div class="p-4 border-t border-gray-100 dark:border-slate-700 flex justify-end gap-3 bg-white dark:bg-slate-800 shrink-0">
             <button *ngIf="showSuccessMsg()" class="text-green-600 dark:text-green-400 text-sm flex items-center gap-1 font-medium mr-2 animate-fade-in-up">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
               Đã lưu thành công!
@@ -147,7 +155,6 @@ export class PermissionManagerComponent implements OnInit {
   allUsers = signal<AdminResponse[]>([]);
   searchQuery = signal<string>('');
 
-  // Computed signal for filtering users based on search
   filteredUsers = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
     if (!query) return this.allUsers();
@@ -166,19 +173,39 @@ export class PermissionManagerComponent implements OnInit {
   selectedUser = signal<AdminResponse | null>(null);
   currentPermissions = signal<Set<string>>(new Set());
 
-  // Define the common actions for the table columns
-  commonActions = [
-    { code: 'read', label: 'Xem' },
-    { code: 'create', label: 'Thêm' },
-    { code: 'update', label: 'Sửa' },
-    { code: 'delete', label: 'Xóa' }
-  ];
+  // Define Groups matching EXACTLY with BE database
+  groups: PermissionGroup[] = [
+    {
+      name: 'Quản lý Học sinh & Phụ huynh',
+      items: [
+        { code: 'student:read', label: 'Xem danh sách & chi tiết sinh viên' },
+        { code: 'student:create', label: 'Thêm mới sinh viên', implicitReads: ['student:read'] },
+        { code: 'student:update', label: 'Cập nhật thông tin sinh viên', implicitReads: ['student:read'] },
+        { code: 'student:delete', label: 'Xóa sinh viên', implicitReads: ['student:read'] },
 
-  // Define the modules for the rows
-  modules: PermissionModule[] = [
-    { name: 'Quản lý Học sinh', code: 'student', actions: this.commonActions },
-    { name: 'Quản lý Phụ huynh', code: 'parent', actions: this.commonActions },
-    { name: 'Hệ thống (Phân quyền)', code: 'system', actions: this.commonActions }
+        { code: 'parent:read', label: 'Xem danh sách & chi tiết phụ huynh' },
+        { code: 'parent:create', label: 'Thêm mới phụ huynh', implicitReads: ['parent:read'] },
+        { code: 'parent:update', label: 'Cập nhật thông tin phụ huynh', implicitReads: ['parent:read'] },
+        { code: 'parent:delete', label: 'Xóa phụ huynh', implicitReads: ['parent:read'] },
+
+        { code: 'student_parent:assign', label: 'Gán phụ huynh cho sinh viên', implicitReads: ['student:read', 'parent:read'] },
+        { code: 'student_parent:remove', label: 'Hủy liên kết sinh viên - phụ huynh', implicitReads: ['student:read', 'parent:read'] }
+      ]
+    },
+    {
+      name: 'Quản trị Hệ thống (Admin & Roles)',
+      items: [
+        { code: 'admin:read', label: 'Xem danh sách & chi tiết tài khoản Admin' },
+        { code: 'admin:create', label: 'Tạo mới tài khoản Admin', implicitReads: ['admin:read'] },
+        { code: 'admin:update', label: 'Cập nhật thông tin Admin', implicitReads: ['admin:read'] },
+        { code: 'admin:delete', label: 'Xóa tài khoản Admin', implicitReads: ['admin:read'] },
+
+        { code: 'role:read', label: 'Xem danh sách Vai trò & Quyền mẫu' },
+        { code: 'role:manage', label: 'Tạo/sửa/xóa Role mẫu', implicitReads: ['role:read'] },
+
+        { code: 'admin_permission:assign', label: 'Cấp/Tước quyền trực tiếp của Admin', implicitReads: ['admin:read'] }
+      ]
+    }
   ];
 
   ngOnInit() {
@@ -187,10 +214,8 @@ export class PermissionManagerComponent implements OnInit {
 
   loadUsers() {
     this.isLoading.set(true);
-    // Tạm thời gọi API lấy Admins, sau này sẽ là API lấy tất cả Users
     this.adminService.getAllAdmins().subscribe({
       next: (data) => {
-        // Mock thêm data để test Search nếu cần
         const mockMoreUsers = [
           ...data,
           { id: 4, username: 'nguoidung1', fullName: 'Nguyễn Văn A', email: 'nva@gmail.com', createdAt: new Date().toISOString(), permissions: [] },
@@ -205,9 +230,7 @@ export class PermissionManagerComponent implements OnInit {
     });
   }
 
-  onSearchChange() {
-    // Search is handled by the computed signal automatically
-  }
+  onSearchChange() {}
 
   selectUser(user: AdminResponse) {
     this.selectedUser.set(user);
@@ -215,59 +238,55 @@ export class PermissionManagerComponent implements OnInit {
     this.showSuccessMsg.set(false);
   }
 
-  hasPermission(moduleCode: string, actionCode: string): boolean {
-    const permString = `${moduleCode}:${actionCode}`;
-    return this.currentPermissions().has(permString);
+  hasPermission(code: string): boolean {
+    return this.currentPermissions().has(code);
   }
 
-  togglePermission(moduleCode: string, actionCode: string) {
-    const permString = `${moduleCode}:${actionCode}`;
-    const readString = `${moduleCode}:read`;
+  togglePermission(item: PermissionItem) {
     const current = new Set(this.currentPermissions());
-    
-    if (current.has(permString)) {
-      // Bỏ tick
-      current.delete(permString);
-      
-      // Nếu bỏ tick quyền 'Xem' (read), tự động bỏ tick luôn các quyền 'Thêm', 'Sửa', 'Xóa'
-      if (actionCode === 'read') {
-        current.delete(`${moduleCode}:create`);
-        current.delete(`${moduleCode}:update`);
-        current.delete(`${moduleCode}:delete`);
+
+    if (current.has(item.code)) {
+      // Uncheck
+      current.delete(item.code);
+
+      // If unchecking a 'read' permission, auto-uncheck dependents
+      if (item.code.endsWith(':read')) {
+        this.groups.forEach(g => {
+          g.items.forEach(i => {
+            if (i.implicitReads?.includes(item.code)) {
+              current.delete(i.code);
+            }
+          });
+        });
       }
     } else {
-      // Tick chọn
-      current.add(permString);
-      
-      // Nếu tick chọn 'Thêm', 'Sửa' hoặc 'Xóa', tự động tick luôn quyền 'Xem' (read)
-      if (actionCode === 'create' || actionCode === 'update' || actionCode === 'delete') {
-        current.add(readString);
+      // Check
+      current.add(item.code);
+
+      // Auto-check dependencies
+      if (item.implicitReads) {
+        item.implicitReads.forEach(readCode => {
+          current.add(readCode);
+        });
       }
     }
-    
+
     this.currentPermissions.set(current);
     this.showSuccessMsg.set(false);
   }
 
-  toggleAllPermissions() {
-    const current = new Set(this.currentPermissions());
-    let totalPermissions = 0;
+  selectAllPermissions() {
+    const all = new Set<string>();
+    this.groups.forEach(g => {
+      g.items.forEach(i => all.add(i.code));
+    });
+    this.currentPermissions.set(all);
+    this.showSuccessMsg.set(false);
+  }
 
-    this.modules.forEach(m => totalPermissions += m.actions.length);
-
-    if (current.size > 0) {
-      // Clear all
-      this.currentPermissions.set(new Set());
-    } else {
-      // Select all
-      const all = new Set<string>();
-      this.modules.forEach(m => {
-        m.actions.forEach(a => {
-          all.add(`${m.code}:${a.code}`);
-        });
-      });
-      this.currentPermissions.set(all);
-    }
+  deselectAllPermissions() {
+    this.currentPermissions.set(new Set());
+    this.showSuccessMsg.set(false);
   }
 
   savePermissions() {
@@ -279,9 +298,7 @@ export class PermissionManagerComponent implements OnInit {
 
     this.adminService.updateAdminPermissions(user.id, permsArray).subscribe({
       next: () => {
-        // Update local state
         user.permissions = permsArray;
-        // Update in the allUsers array to refresh UI indicators
         const all = [...this.allUsers()];
         const index = all.findIndex(u => u.id === user.id);
         if (index !== -1) {

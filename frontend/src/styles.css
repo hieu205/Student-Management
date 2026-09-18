@@ -10,3 +10,43 @@ body {
   @apply transition-colors duration-300;
 }
 @import 'quill/dist/quill.snow.css';
+
+/* Quill Dark Mode Overrides */
+.dark .ql-toolbar.ql-snow {
+  border-color: #334155 !important;
+  background-color: #1e293b !important;
+}
+
+.dark .ql-container.ql-snow {
+  border-color: #334155 !important;
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ql-snow .ql-stroke {
+  stroke: #cbd5e1 !important;
+}
+
+.dark .ql-snow .ql-fill {
+  fill: #cbd5e1 !important;
+}
+
+.dark .ql-snow .ql-picker {
+  color: #cbd5e1 !important;
+}
+
+.dark .ql-snow .ql-picker-options {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark .ql-snow .ql-tooltip {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ql-editor.ql-blank::before {
+  color: #64748b !important;
+}
+

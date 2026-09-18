@@ -39,13 +39,13 @@ import { ParentService } from '../../core/services/parent.service';
               <p class="text-sm text-gray-500 dark:text-slate-400">Ngày sinh</p>
               <p class="font-medium">{{ student()?.dateOfBirth | date:'dd/MM/yyyy' }}</p>
             </div>
-            <div>
-              <p class="text-sm text-gray-500 dark:text-slate-400">Giới tính</p>
+            <div class="mb-4">
+              <p class="text-xs text-gray-500 dark:text-slate-400 mb-1">Giới tính</p>
               <p class="font-medium">{{ student()?.gender === 'Male' ? 'Nam' : 'Nữ' }}</p>
             </div>
             <div>
-              <p class="text-sm text-gray-500 dark:text-slate-400">Địa chỉ</p>
-              <p class="font-medium">{{ student()?.address || 'Chưa cập nhật' }}</p>
+              <p class="text-xs text-gray-500 dark:text-slate-400 mb-1">Địa chỉ</p>
+              <div class="font-medium prose prose-sm prose-blue dark:prose-invert max-w-none" [innerHTML]="student()?.address || 'Chưa cập nhật'"></div>
             </div>
           </div>
         </div>

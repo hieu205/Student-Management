@@ -151,7 +151,7 @@ import { StudentFormComponent } from './student-form.component';
                   </div>
                 </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle truncate max-w-[150px]" [title]="student.address || ''">{{ student.address || '—' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle truncate max-w-[150px]" [title]="stripHtml(student.address)">{{ stripHtml(student.address) || '—' }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium action-dropdown-container relative align-middle">
                 <button (click)="toggleDropdown(student.id, $event)" class="text-gray-400 hover:text-blue-600 dark:text-blue-400 p-2 rounded-full hover:bg-blue-50 dark:bg-blue-900/20 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-100">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
@@ -231,7 +231,7 @@ import { StudentFormComponent } from './student-form.component';
               </div>
               <div class="flex justify-between items-center gap-2">
                 <span class="text-gray-500 dark:text-slate-400 whitespace-nowrap shrink-0">Địa chỉ:</span>
-                <span class="font-medium text-gray-700 dark:text-slate-200 truncate" [title]="student.address || ''">{{ student.address || '—' }}</span>
+                <span class="font-medium text-gray-700 dark:text-slate-200 truncate" [title]="stripHtml(student.address)">{{ stripHtml(student.address) || '—' }}</span>
               </div>
             </div>
 
@@ -422,6 +422,11 @@ export class StudentListComponent implements OnInit {
       this.currentPage.set(page);
       this.loadStudents();
     }
+  }
+
+  stripHtml(html: string | undefined | null): string {
+    if (!html) return '';
+    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
   }
 
   toggleDropdown(id: number, event: Event) {
