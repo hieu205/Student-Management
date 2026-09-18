@@ -4,11 +4,12 @@ import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { StudentService } from '../../core/services/student.service';
 import { Student } from '../../core/models/student.model';
+import { QuillModule } from 'ngx-quill';
 
 @Component({
   selector: 'app-student-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, QuillModule],
   template: `
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden w-full max-w-3xl mx-auto">
       <div class="p-6 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 flex justify-between items-center">
@@ -60,9 +61,17 @@ import { Student } from '../../core/models/student.model';
             <!-- Lớp -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Lớp <span class="text-red-500">*</span></label>
-              <input type="text" formControlName="className"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
+              <input type="text" formControlName="className" list="classNames"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white uppercase"
                 [ngClass]="{'border-red-500': submitted() && f['className'].errors}">
+              <datalist id="classNames">
+                <option value="10A1"></option>
+                <option value="10A2"></option>
+                <option value="11A1"></option>
+                <option value="11A2"></option>
+                <option value="12A1"></option>
+                <option value="12A2"></option>
+              </datalist>
               <div *ngIf="submitted() && f['className'].errors" class="text-red-500 text-xs mt-1">
                 <p *ngIf="f['className'].errors?.['required']">Lớp học là bắt buộc</p>
                 <p *ngIf="f['className'].errors?.['pattern']">Tên lớp không được chứa ký tự đặc biệt</p>
@@ -72,9 +81,11 @@ import { Student } from '../../core/models/student.model';
             <!-- Ngày sinh -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Ngày sinh <span class="text-red-500">*</span></label>
-              <input type="date" formControlName="dateOfBirth" min="1900-01-01" max="2099-12-31"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
-                [ngClass]="{'border-red-500': submitted() && f['dateOfBirth'].errors}">
+              <div class="relative">
+                <input type="date" formControlName="dateOfBirth" min="1900-01-01" max="2099-12-31"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
+                  [ngClass]="{'border-red-500': submitted() && f['dateOfBirth'].errors}">
+              </div>
               <div *ngIf="submitted() && f['dateOfBirth'].errors" class="text-red-500 text-xs mt-1">
                 <p *ngIf="f['dateOfBirth'].errors?.['required']">Ngày sinh là bắt buộc</p>
                 <p *ngIf="f['dateOfBirth'].errors?.['pattern']">Năm sinh không hợp lệ (nhập từ 1900 đến 2099)</p>
@@ -84,17 +95,28 @@ import { Student } from '../../core/models/student.model';
             <!-- Giới tính -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Giới tính</label>
-              <select formControlName="gender" class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white bg-white dark:bg-slate-800">
-                <option value="Male">Nam</option>
-                <option value="Female">Nữ</option>
-              </select>
+              <div class="flex gap-6 mt-3">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" formControlName="gender" value="Male" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                  <span class="text-gray-700 dark:text-slate-300">Nam</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" formControlName="gender" value="Female" class="w-4 h-4 text-pink-500 border-gray-300 focus:ring-pink-500">
+                  <span class="text-gray-700 dark:text-slate-300">Nữ</span>
+                </label>
+              </div>
             </div>
 
             <!-- Địa chỉ -->
-            <div class="md:col-span-2">
+            <div class="md:col-span-2 mb-8">
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Địa chỉ</label>
-              <textarea formControlName="address" rows="3"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"></textarea>
+              <div class="bg-white dark:bg-slate-800 rounded-md">
+                <quill-editor formControlName="address" 
+                  [styles]="{height: '150px'}" 
+                  placeholder="Nhập địa chỉ chi tiết (số nhà, phường/xã, quận/huyện...)"
+                  theme="snow">
+                </quill-editor>
+              </div>
             </div>
           </div>
 

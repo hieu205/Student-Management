@@ -3,11 +3,12 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ParentService } from '../../core/services/parent.service';
+import { QuillModule } from 'ngx-quill';
 
 @Component({
   selector: 'app-parent-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, QuillModule],
   template: `
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden w-full max-w-3xl mx-auto">
       <div class="p-6 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 flex justify-between items-center">
@@ -45,9 +46,14 @@ import { ParentService } from '../../core/services/parent.service';
             <!-- SĐT -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Số điện thoại <span class="text-red-500">*</span></label>
-              <input type="text" formControlName="phoneNumber" (input)="f['phoneNumber'].setErrors(null)"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
-                [ngClass]="{'border-red-500': (submitted() || f['phoneNumber'].dirty) && f['phoneNumber'].errors}">
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                </div>
+                <input type="text" formControlName="phoneNumber" (input)="f['phoneNumber'].setErrors(null)"
+                  class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
+                  [ngClass]="{'border-red-500': (submitted() || f['phoneNumber'].dirty) && f['phoneNumber'].errors}">
+              </div>
               <div *ngIf="(submitted() || f['phoneNumber'].dirty) && f['phoneNumber'].errors" class="text-red-500 text-xs mt-1">
                 <p *ngIf="f['phoneNumber'].errors?.['required']">Số điện thoại là bắt buộc</p>
                 <p *ngIf="f['phoneNumber'].errors?.['pattern']">Số điện thoại không hợp lệ (Gồm 10 số, bắt đầu bằng 03,05,07,08,09)</p>
@@ -58,9 +64,14 @@ import { ParentService } from '../../core/services/parent.service';
             <!-- Email -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Email</label>
-              <input type="email" formControlName="email" (input)="f['email'].setErrors(null)"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
-                [ngClass]="{'border-red-500': (submitted() || f['email'].dirty) && f['email'].errors}">
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                </div>
+                <input type="email" formControlName="email" (input)="f['email'].setErrors(null)"
+                  class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
+                  [ngClass]="{'border-red-500': (submitted() || f['email'].dirty) && f['email'].errors}">
+              </div>
               <div *ngIf="(submitted() || f['email'].dirty) && f['email'].errors" class="text-red-500 text-xs mt-1">
                 <p *ngIf="f['email'].errors?.['email']">Email không hợp lệ</p>
                 <p *ngIf="f['email'].errors?.['serverError']" class="font-semibold">{{ f['email'].errors?.['serverError'] }}</p>
@@ -70,17 +81,31 @@ import { ParentService } from '../../core/services/parent.service';
             <!-- Nghề nghiệp -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Nghề nghiệp</label>
-              <input type="text" formControlName="occupation"
+              <input type="text" formControlName="occupation" list="occupations"
                 class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
                 [ngClass]="{'border-red-500': submitted() && f['occupation'].errors}">
+              <datalist id="occupations">
+                <option value="Giáo viên"></option>
+                <option value="Bác sĩ"></option>
+                <option value="Kỹ sư"></option>
+                <option value="Kinh doanh"></option>
+                <option value="Nhân viên văn phòng"></option>
+                <option value="Nội trợ"></option>
+                <option value="Công nhân"></option>
+              </datalist>
               <p *ngIf="submitted() && f['occupation'].errors?.['pattern']" class="text-red-500 text-xs mt-1">Nghề nghiệp không được chứa số và ký tự đặc biệt</p>
             </div>
 
             <!-- Địa chỉ -->
-            <div>
+            <div class="md:col-span-2 mb-8">
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Địa chỉ</label>
-              <input type="text" formControlName="address"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white">
+              <div class="bg-white dark:bg-slate-800 rounded-md">
+                <quill-editor formControlName="address" 
+                  [styles]="{height: '150px'}" 
+                  placeholder="Nhập địa chỉ chi tiết (số nhà, phường/xã, quận/huyện...)"
+                  theme="snow">
+                </quill-editor>
+              </div>
             </div>
           </div>
 
