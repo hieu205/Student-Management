@@ -8,7 +8,7 @@ export const routes: Routes = [
   },
   {
     path: '',
-    canActivate: [authGuard], // KÍCH HOẠT CHỐT CHẶN Ở ĐÂY
+    canActivate: [authGuard], // KÍCH HOẠT CHẶN Ở ĐÂY
     loadComponent: () => import('./features/layout/main-layout.component').then(m => m.MainLayoutComponent),
     children: [
       {
@@ -34,6 +34,10 @@ export const routes: Routes = [
       {
         path: 'parents/new',
         loadComponent: () => import('./features/parents/parent-form.component').then(m => m.ParentFormComponent)
+      },
+      {
+        path: 'permissions',
+        loadComponent: () => import('./features/permissions/permission-manager.component').then(m => m.PermissionManagerComponent)
       },
       {
         path: 'profile',
