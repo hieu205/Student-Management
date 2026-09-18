@@ -38,8 +38,8 @@ import { QuillModule } from 'ngx-quill';
                 class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
                 [ngClass]="{'border-red-500': submitted() && f['fullName'].errors}">
               <div *ngIf="submitted() && f['fullName'].errors" class="text-red-500 text-xs mt-1">
-                <p *ngIf="f['fullName'].errors?.['required']">Họ tên là bắt buộc</p>
-                <p *ngIf="f['fullName'].errors?.['pattern']">Họ tên không được chứa số và ký tự đặc biệt</p>
+                <p *ngIf="f['fullName'].errors['required']">Họ tên là bắt buộc</p>
+                <p *ngIf="f['fullName'].errors['pattern']">Họ tên không được chứa số và ký tự đặc biệt</p>
               </div>
             </div>
 
@@ -55,9 +55,9 @@ import { QuillModule } from 'ngx-quill';
                   [ngClass]="{'border-red-500': (submitted() || f['phoneNumber'].dirty) && f['phoneNumber'].errors}">
               </div>
               <div *ngIf="(submitted() || f['phoneNumber'].dirty) && f['phoneNumber'].errors" class="text-red-500 text-xs mt-1">
-                <p *ngIf="f['phoneNumber'].errors?.['required']">Số điện thoại là bắt buộc</p>
-                <p *ngIf="f['phoneNumber'].errors?.['pattern']">Số điện thoại không hợp lệ (Gồm 10 số, bắt đầu bằng 03,05,07,08,09)</p>
-                <p *ngIf="f['phoneNumber'].errors?.['serverError']" class="font-semibold">{{ f['phoneNumber'].errors?.['serverError'] }}</p>
+                <p *ngIf="f['phoneNumber'].errors['required']">Số điện thoại là bắt buộc</p>
+                <p *ngIf="f['phoneNumber'].errors['pattern']">Số điện thoại không hợp lệ (Gồm 10 số, bắt đầu bằng 03,05,07,08,09)</p>
+                <p *ngIf="f['phoneNumber'].errors['serverError']" class="font-semibold">{{ f['phoneNumber'].errors['serverError'] }}</p>
               </div>
             </div>
 
@@ -73,8 +73,8 @@ import { QuillModule } from 'ngx-quill';
                   [ngClass]="{'border-red-500': (submitted() || f['email'].dirty) && f['email'].errors}">
               </div>
               <div *ngIf="(submitted() || f['email'].dirty) && f['email'].errors" class="text-red-500 text-xs mt-1">
-                <p *ngIf="f['email'].errors?.['email']">Email không hợp lệ</p>
-                <p *ngIf="f['email'].errors?.['serverError']" class="font-semibold">{{ f['email'].errors?.['serverError'] }}</p>
+                <p *ngIf="f['email'].errors['email']">Email không hợp lệ</p>
+                <p *ngIf="f['email'].errors['serverError']" class="font-semibold">{{ f['email'].errors['serverError'] }}</p>
               </div>
             </div>
 
@@ -99,9 +99,10 @@ import { QuillModule } from 'ngx-quill';
             <!-- Địa chỉ -->
             <div class="md:col-span-2 mb-8">
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Địa chỉ</label>
-              <div class="bg-white dark:bg-slate-800 rounded-md">
-                <quill-editor formControlName="address" 
-                  [styles]="{height: '150px'}" 
+              <div class="bg-white dark:bg-slate-800 rounded-md w-full">
+                <quill-editor formControlName="address"
+                  [styles]="{height: '150px', display: 'block', width: '100%'}"
+                  class="w-full"
                   placeholder="Nhập địa chỉ chi tiết (số nhà, phường/xã, quận/huyện...)"
                   theme="snow">
                 </quill-editor>
