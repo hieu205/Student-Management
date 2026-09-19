@@ -82,7 +82,7 @@ export class StudentService {
             let valB = b[sortBy];
             if (typeof valA === 'string') valA = valA.toLowerCase();
             if (typeof valB === 'string') valB = valB.toLowerCase();
-            if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+            if (valA < valB) return sortDir === 'asc' ? -1 : 1; 
             if (valA > valB) return sortDir === 'asc' ? 1 : -1;
             return 0;
           });
