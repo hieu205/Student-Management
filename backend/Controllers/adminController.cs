@@ -53,17 +53,9 @@ public class AdminController : ControllerBase
 
     [HttpPut("{id}/permissions")]
     [HasPermission("admin_permission:assign")]
-    public async Task<IActionResult> AssignPermissions([FromRoute] int id, [FromBody] AssignPermissionsRequest request)
+    public async Task<IActionResult> SyncPermissions([FromRoute] int id, [FromBody] AssignPermissionsRequest request)
     {
-        await _adminService.AssignPermissionsAsync(id, request.PermissionIds);
-        return Ok(new { message = $"Cập nhật quyền cho Admin ID {id} thành công." });
-    }
-
-    [HttpDelete("{id}/permissions")]
-    [HasPermission("admin_permission:assign")]
-    public async Task<IActionResult> RevokePermissions([FromRoute] int id, [FromBody] AssignPermissionsRequest request)
-    {
-        await _adminService.RevokePermissionsAsync(id, request.PermissionIds);
-        return Ok(new { message = $"Thu hồi quyền thành công cho Admin ID {id}." });
+        await _adminService.SyncPermissionsAsync(id, request.PermissionIds);
+        return Ok(new { message = $"Đồng bộ danh sách quyền cho Admin ID {id} thành công." });
     }
 }

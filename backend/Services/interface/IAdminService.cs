@@ -9,6 +9,7 @@ public interface IAdminService
     Task<AdminResponse> GetProfileAdmin(int id);
     Task<AdminResponse> UpdateAdmin(int id, AdminRequest request);
     Task DeleteAdmin(int id);
-    Task AssignPermissionsAsync(int adminId, List<int> permissionIds);
-    Task RevokePermissionsAsync(int adminId, List<int> permissionIds);
+
+    Task SyncPermissionsAsync(int adminId, List<int> targetPermissionIds);
+
 }

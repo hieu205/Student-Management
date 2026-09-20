@@ -10,7 +10,6 @@ using demo_dotnet.backend.Models;
 using demo_dotnet.backend.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using BC = BCrypt.Net.BCrypt;
 
 namespace demo_dotnet.backend.Services;
 
@@ -31,28 +30,49 @@ public class AuthService : IAuthService
     {
         var admin = await _adminRepository.GetByUsernameAsync(request.Username);
 
-        if (admin == null || !BC.Verify(request.Password, admin.PasswordHash))
+        // Đảm bảo chỉ định rõ namespace BCrypt.Net.BCrypt để tránh lỗi BinaryReader
+        if (admin == null || !BCrypt.Net.BCrypt.Verify(request.Password, admin.PasswordHash))
         {
             throw new UnauthorizedException("Sai tài khoản hoặc mật khẩu");
         }
 
-        // Query danh sách permission.code từ bảng admin_permission
+        // 1. Query danh sách permission.code của Admin từ admin_permission
         var permissions = await _context.AdminPermissions
             .Where(ap => ap.AdminId == admin.Id)
             .Select(ap => ap.Permission.Code)
+            .Distinct()
             .ToListAsync();
 
+        // 2. Query lấy tên các Role khớp với danh sách Permission của Admin
+        var adminPermissionIds = await _context.AdminPermissions
+            .Where(ap => ap.AdminId == admin.Id)
+            .Select(ap => ap.PermissionId)
+            .ToListAsync();
+
+        var roles = await _context.RolePermissions
+            .Where(rp => adminPermissionIds.Contains(rp.PermissionId))
+            .Select(rp => rp.Role.Name)
+            .Distinct()
+            .ToListAsync();
+
+        // 3. Tạo Claims
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, admin.Id.ToString()),
             new Claim(ClaimTypes.Name, admin.Username)
         };
 
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+
         foreach (var code in permissions)
         {
             claims.Add(new Claim("permission", code));
         }
 
+        // 4. Tạo JWT Token
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtSecret = _configuration["Jwt:Secret"]
             ?? throw new InvalidOperationException("Jwt:Secret chưa được cấu hình trong appsettings.json");
@@ -68,6 +88,7 @@ public class AuthService : IAuthService
         var token = tokenHandler.CreateToken(tokenDescriptor);
         var tokenString = tokenHandler.WriteToken(token);
 
+        // 5. Trả về thông tin
         return new LoginResponseDto
         {
             AccessToken = tokenString,
@@ -77,7 +98,9 @@ public class AuthService : IAuthService
                 Id = admin.Id,
                 Username = admin.Username,
                 FullName = admin.FullName,
-                Email = admin.Email ?? string.Empty
+                Email = admin.Email ?? string.Empty,
+                Roles = roles,
+                Permissions = permissions
             }
         };
     }
@@ -90,20 +113,18 @@ public class AuthService : IAuthService
             throw new ConflictException("Tài khoản đã tồn tại");
         }
 
-        // 1. Khởi tạo Admin
         var admin = new Admin
         {
             Username = request.Username.Trim(),
-            PasswordHash = BC.HashPassword(request.Password),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             FullName = request.FullName.Trim(),
             Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
             CreatedAt = DateTime.UtcNow
         };
 
         await _adminRepository.AddAsync(admin);
-        await _adminRepository.SaveChangesAsync(); // Lưu để sinh admin.Id
+        await _adminRepository.SaveChangesAsync();
 
-        // 2. Query lấy ID của 2 quyền student:read và parent:read (Không phân biệt hoa/thường)
         var defaultPermissionCodes = new[] { "student:read", "parent:read" };
 
         var defaultPermissions = await _context.Permissions
@@ -115,7 +136,6 @@ public class AuthService : IAuthService
             throw new InvalidOperationException("Chưa seed dữ liệu 'student:read' và 'parent:read' trong bảng permission.");
         }
 
-        // 3. Gán quyền mặc định vào admin_permission
         foreach (var perm in defaultPermissions)
         {
             _context.AdminPermissions.Add(new AdminPermission
@@ -125,7 +145,6 @@ public class AuthService : IAuthService
             });
         }
 
-        // 4. Lưu thay đổi bảng admin_permission
         await _context.SaveChangesAsync();
 
         return new AdminResponse

@@ -77,7 +77,7 @@ public class AdminService : IAdminService
         await _adminRepository.SaveChangesAsync();
     }
 
-    public async Task AssignPermissionsAsync(int adminId, List<int> permissionIds)
+    public async Task SyncPermissionsAsync(int adminId, List<int> targetPermissionIds)
     {
         // 1. Kiểm tra Admin có tồn tại không
         var admin = await _adminRepository.GetByIdAsync(adminId);
@@ -86,35 +86,59 @@ public class AdminService : IAdminService
             throw new NotFoundException($"Không tìm thấy admin có id {adminId}");
         }
 
-        // 2. Lấy danh sách ID các permission hợp lệ trong hệ thống từ danh sách truyền vào
+        targetPermissionIds = targetPermissionIds?.Distinct().ToList() ?? new List<int>();
+
+        // 2. Lấy các ID quyền thực sự hợp lệ tồn tại trong bảng Permissions
         var validPermissionIds = await _context.Permissions
-            .Where(p => permissionIds.Contains(p.Id))
+            .Where(p => targetPermissionIds.Contains(p.Id))
             .Select(p => p.Id)
             .ToListAsync();
 
-        // 3. Lấy danh sách ID các permission mà Admin NÀY ĐÃ CÓ sẵn trong Database
-        var existingPermissionIds = await _context.AdminPermissions
+        // ⚠️ ĐOẠN CHECK MỚI: Kiểm tra xem có ID nào Frontend gửi lên bị thiếu trong DB không
+        var invalidIds = targetPermissionIds.Except(validPermissionIds).ToList();
+        if (invalidIds.Any())
+        {
+            throw new NotFoundException($"Các quyền sau không tồn tại trong hệ thống: {string.Join(", ", invalidIds)}");
+        }
+
+        // 3. Lấy danh sách các quyền HIỆN TẠI của Admin trong DB
+        var currentAdminPermissions = await _context.AdminPermissions
             .Where(ap => ap.AdminId == adminId)
-            .Select(ap => ap.PermissionId)
             .ToListAsync();
 
-        // 4. Lọc ra những ID quyền MỚI CHƯA CÓ (tránh chèn trùng lặp)
-        var newPermissionIds = validPermissionIds
-            .Except(existingPermissionIds)
+        var currentPermissionIds = currentAdminPermissions.Select(ap => ap.PermissionId).ToList();
+
+        // 4. Lọc quyền CẦN XÓA
+        var permissionsToRemove = currentAdminPermissions
+            .Where(ap => !validPermissionIds.Contains(ap.PermissionId))
             .ToList();
 
-        // 5. Chỉ chèn thêm các quyền mới
-        foreach (var permId in newPermissionIds)
-        {
-            _context.AdminPermissions.Add(new AdminPermission
+        // 5. Lọc quyền CẦN THÊM
+        var permissionIdsToAdd = validPermissionIds
+            .Except(currentPermissionIds)
+            .Select(permId => new AdminPermission
             {
                 AdminId = adminId,
                 PermissionId = permId
-            });
+            })
+            .ToList();
+
+        // 6. Thực hiện cập nhật Database
+        if (permissionsToRemove.Any())
+        {
+            _context.AdminPermissions.RemoveRange(permissionsToRemove);
         }
 
-        // 6. Lưu xuống Database
-        await _context.SaveChangesAsync();
+        if (permissionIdsToAdd.Any())
+        {
+            await _context.AdminPermissions.AddRangeAsync(permissionIdsToAdd);
+        }
+
+        // 7. Lưu thay đổi xuống Database
+        if (permissionsToRemove.Any() || permissionIdsToAdd.Any())
+        {
+            await _context.SaveChangesAsync();
+        }
     }
 
     private static AdminResponse MapToResponse(Admin admin)
@@ -126,26 +150,5 @@ public class AdminService : IAdminService
             FullName = admin.FullName,
             Email = admin.Email ?? string.Empty
         };
-    }
-    public async Task RevokePermissionsAsync(int adminId, List<int> permissionIds)
-    {
-        // 1. Kiểm tra Admin có tồn tại không
-        var admin = await _adminRepository.GetByIdAsync(adminId);
-        if (admin == null)
-        {
-            throw new NotFoundException($"Không tìm thấy admin có id {adminId}");
-        }
-
-        // 2. Tìm danh sách quyền cần thu hồi thuộc về Admin này
-        var permissionsToRevoke = await _context.AdminPermissions
-            .Where(ap => ap.AdminId == adminId && permissionIds.Contains(ap.PermissionId))
-            .ToListAsync();
-
-        if (permissionsToRevoke.Any())
-        {
-            // 3. Xóa các quyền được chỉ định khỏi bảng admin_permission
-            _context.AdminPermissions.RemoveRange(permissionsToRevoke);
-            await _context.SaveChangesAsync();
-        }
     }
 }
