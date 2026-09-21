@@ -3,6 +3,7 @@ using demo_dotnet.backend.Services.Interface;
 using demo_dotnet.backend.DTOs.Request;
 using demo_dotnet.backend.DTOs.Response;
 using Microsoft.AspNetCore.Authorization;
+using demo_dotnet.backend.Attributes;
 
 namespace demo_dotnet.backend.Controllers;
 
@@ -19,6 +20,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet]
+    [HasPermission("admin:read")]
     public async Task<ActionResult<List<AdminResponse>>> GetAll()
     {
         var res = await _adminService.GetAllAdmins();
@@ -26,6 +28,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [HasPermission("admin:read")]
     public async Task<ActionResult<AdminResponse>> GetProfileAdmin([FromRoute] int id)
     {
         var res = await _adminService.GetProfileAdmin(id);
@@ -33,6 +36,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [HasPermission("admin:update")]
     public async Task<ActionResult<AdminResponse>> Update([FromRoute] int id, [FromBody] AdminRequest request)
     {
         var res = await _adminService.UpdateAdmin(id, request);
@@ -40,9 +44,18 @@ public class AdminController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [HasPermission("admin:delete")]
     public async Task<IActionResult> Delete([FromRoute] int id)
     {
         await _adminService.DeleteAdmin(id);
-        return Ok(new { message = $"Xóa tài khoản Admin ID {id} thành công" });
+        return NoContent();
+    }
+
+    [HttpPut("{id}/permissions")]
+    [HasPermission("admin_permission:assign")]
+    public async Task<IActionResult> SyncPermissions([FromRoute] int id, [FromBody] AssignPermissionsRequest request)
+    {
+        await _adminService.SyncPermissionsAsync(id, request.PermissionIds);
+        return Ok(new { message = $"Đồng bộ danh sách quyền cho Admin ID {id} thành công." });
     }
 }

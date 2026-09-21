@@ -1,19 +1,23 @@
+using demo_dotnet.backend.Data;
 using demo_dotnet.backend.Data.Interfaces;
 using demo_dotnet.backend.DTOs.Request;
 using demo_dotnet.backend.DTOs.Response;
 using demo_dotnet.backend.exception;
 using demo_dotnet.backend.Models;
 using demo_dotnet.backend.Services.Interface;
+using Microsoft.EntityFrameworkCore;
 
 namespace demo_dotnet.backend.Services;
 
 public class AdminService : IAdminService
 {
     private readonly IAdminRepository _adminRepository;
+    private readonly AppDbContext _context;
 
-    public AdminService(IAdminRepository adminRepository)
+    public AdminService(IAdminRepository adminRepository, AppDbContext context)
     {
         _adminRepository = adminRepository;
+        _context = context;
     }
 
     public async Task<List<AdminResponse>> GetAllAdmins()
@@ -73,6 +77,70 @@ public class AdminService : IAdminService
         await _adminRepository.SaveChangesAsync();
     }
 
+    public async Task SyncPermissionsAsync(int adminId, List<int> targetPermissionIds)
+    {
+        // 1. Kiểm tra Admin có tồn tại không
+        var admin = await _adminRepository.GetByIdAsync(adminId);
+        if (admin == null)
+        {
+            throw new NotFoundException($"Không tìm thấy admin có id {adminId}");
+        }
+
+        targetPermissionIds = targetPermissionIds?.Distinct().ToList() ?? new List<int>();
+
+        // 2. Lấy các ID quyền thực sự hợp lệ tồn tại trong bảng Permissions
+        var validPermissionIds = await _context.Permissions
+            .Where(p => targetPermissionIds.Contains(p.Id))
+            .Select(p => p.Id)
+            .ToListAsync();
+
+        // ⚠️ ĐOẠN CHECK MỚI: Kiểm tra xem có ID nào Frontend gửi lên bị thiếu trong DB không
+        var invalidIds = targetPermissionIds.Except(validPermissionIds).ToList();
+        if (invalidIds.Any())
+        {
+            throw new NotFoundException($"Các quyền sau không tồn tại trong hệ thống: {string.Join(", ", invalidIds)}");
+        }
+
+        // 3. Lấy danh sách các quyền HIỆN TẠI của Admin trong DB
+        var currentAdminPermissions = await _context.AdminPermissions
+            .Where(ap => ap.AdminId == adminId)
+            .ToListAsync();
+
+        var currentPermissionIds = currentAdminPermissions.Select(ap => ap.PermissionId).ToList();
+
+        // 4. Lọc quyền CẦN XÓA
+        var permissionsToRemove = currentAdminPermissions
+            .Where(ap => !validPermissionIds.Contains(ap.PermissionId))
+            .ToList();
+
+        // 5. Lọc quyền CẦN THÊM
+        var permissionIdsToAdd = validPermissionIds
+            .Except(currentPermissionIds)
+            .Select(permId => new AdminPermission
+            {
+                AdminId = adminId,
+                PermissionId = permId
+            })
+            .ToList();
+
+        // 6. Thực hiện cập nhật Database
+        if (permissionsToRemove.Any())
+        {
+            _context.AdminPermissions.RemoveRange(permissionsToRemove);
+        }
+
+        if (permissionIdsToAdd.Any())
+        {
+            await _context.AdminPermissions.AddRangeAsync(permissionIdsToAdd);
+        }
+
+        // 7. Lưu thay đổi xuống Database
+        if (permissionsToRemove.Any() || permissionIdsToAdd.Any())
+        {
+            await _context.SaveChangesAsync();
+        }
+    }
+
     private static AdminResponse MapToResponse(Admin admin)
     {
         return new AdminResponse
@@ -80,8 +148,7 @@ public class AdminService : IAdminService
             Id = admin.Id,
             Username = admin.Username,
             FullName = admin.FullName,
-            Email = admin.Email ?? string.Empty,
-            RoleId = admin.RoleId
+            Email = admin.Email ?? string.Empty
         };
     }
 }
