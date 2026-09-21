@@ -19,5 +19,8 @@ public class AdminConfiguration : IEntityTypeConfiguration<Admin>
         builder.Property(a => a.FullName).HasColumnName("full_name").HasMaxLength(100).IsRequired();
         builder.Property(a => a.Email).HasColumnName("email").HasMaxLength(100);
         builder.Property(a => a.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+
+        builder.Property(a => a.PasswordResetToken).HasColumnName("password_reset_token").HasMaxLength(255);
+        builder.Property(a => a.ResetTokenExpires).HasColumnName("reset_token_expires");
     }
 }

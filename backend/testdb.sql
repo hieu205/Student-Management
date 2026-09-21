@@ -81,3 +81,18 @@ CREATE TABLE admin_permission (
 
 -- 5. Xóa cột role_id ở bảng admin cũ
 ALTER TABLE admin DROP COLUMN role_id;
+
+-- ============================================
+-- Cập nhật bổ sung cho bảng admin (Forgot Password Feature)
+-- ============================================
+
+-- 1. Thêm cột password_reset_token để lưu Token đặt lại mật khẩu
+ALTER TABLE admin 
+ADD COLUMN password_reset_token VARCHAR(255);
+
+-- 2. Thêm cột reset_token_expires để lưu thời gian hết hạn của Token
+ALTER TABLE admin 
+ADD COLUMN reset_token_expires TIMESTAMP;
+
+-- 3. (Tùy chọn tối ưu) Tạo Index giúp truy vấn tìm kiếm Token trong DB nhanh hơn
+CREATE INDEX idx_admin_password_reset_token ON admin (password_reset_token);

@@ -1,3 +1,4 @@
+
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -13,6 +14,8 @@ using demo_dotnet.backend.Security;
 using demo_dotnet.backend.Services;
 using demo_dotnet.backend.Services.Interface;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. KẾT NỐI DATABASE (PostgreSQL)
@@ -26,12 +29,13 @@ builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<IParentRepository, ParentRepository>();
 builder.Services.AddScoped<IStudentParentRepository, StudentParentRepository>();
 
+builder.Services.AddScoped<IEmailService, EmailService>(); // 👈 Đã thêm EmailService
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IParentService, ParentService>();
 
-// 3. CONTROLLERS & VALIDATION RESPONSE FORMAT (FIX CHỐNG TRÙNG KEY AN TOÀN)
+// 3. CONTROLLERS & VALIDATION RESPONSE FORMAT
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(options =>
     {

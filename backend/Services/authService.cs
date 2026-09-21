@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using demo_dotnet.backend.Data;
 using demo_dotnet.backend.Data.Interfaces;
@@ -18,32 +19,35 @@ public class AuthService : IAuthService
     private readonly IAdminRepository _adminRepository;
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
+    private readonly IEmailService _emailService;
 
-    public AuthService(IAdminRepository adminRepository, AppDbContext context, IConfiguration configuration)
+    public AuthService(
+        IAdminRepository adminRepository,
+        AppDbContext context,
+        IConfiguration configuration,
+        IEmailService emailService)
     {
         _adminRepository = adminRepository;
         _context = context;
         _configuration = configuration;
+        _emailService = emailService;
     }
 
     public async Task<LoginResponseDto> LoginAsync(LoginRequest request)
     {
         var admin = await _adminRepository.GetByUsernameAsync(request.Username);
 
-        // Đảm bảo chỉ định rõ namespace BCrypt.Net.BCrypt để tránh lỗi BinaryReader
         if (admin == null || !BCrypt.Net.BCrypt.Verify(request.Password, admin.PasswordHash))
         {
             throw new UnauthorizedException("Sai tài khoản hoặc mật khẩu");
         }
 
-        // 1. Query danh sách permission.code của Admin từ admin_permission
         var permissions = await _context.AdminPermissions
             .Where(ap => ap.AdminId == admin.Id)
             .Select(ap => ap.Permission.Code)
             .Distinct()
             .ToListAsync();
 
-        // 2. Query lấy tên các Role khớp với danh sách Permission của Admin
         var adminPermissionIds = await _context.AdminPermissions
             .Where(ap => ap.AdminId == admin.Id)
             .Select(ap => ap.PermissionId)
@@ -55,7 +59,6 @@ public class AuthService : IAuthService
             .Distinct()
             .ToListAsync();
 
-        // 3. Tạo Claims
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, admin.Id.ToString()),
@@ -72,7 +75,6 @@ public class AuthService : IAuthService
             claims.Add(new Claim("permission", code));
         }
 
-        // 4. Tạo JWT Token
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtSecret = _configuration["Jwt:Secret"]
             ?? throw new InvalidOperationException("Jwt:Secret chưa được cấu hình trong appsettings.json");
@@ -88,7 +90,6 @@ public class AuthService : IAuthService
         var token = tokenHandler.CreateToken(tokenDescriptor);
         var tokenString = tokenHandler.WriteToken(token);
 
-        // 5. Trả về thông tin
         return new LoginResponseDto
         {
             AccessToken = tokenString,
@@ -155,4 +156,74 @@ public class AuthService : IAuthService
             Email = admin.Email ?? string.Empty
         };
     }
+
+    public async Task ForgotPasswordAsync(ForgotPasswordRequest request)
+    {
+        var admin = await _adminRepository.GetByEmailAsync(request.Email.Trim());
+
+        if (admin == null) return;
+
+        var resetToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+
+        admin.PasswordResetToken = resetToken;
+        admin.ResetTokenExpires = DateTime.UtcNow.AddMinutes(15);
+
+        _adminRepository.Update(admin);
+        await _adminRepository.SaveChangesAsync();
+
+        var clientUrl = _configuration["AppSettings:ClientUrl"] ?? "http://localhost:3000";
+        var resetLink = $"{clientUrl}/reset-password?token={resetToken}";
+
+        var emailBody = $@"
+            <h3>Yêu cầu đặt lại mật khẩu</h3>
+            <p>Vui lòng nhấp vào liên kết bên dưới để đặt lại mật khẩu (Liên kết có hiệu lực 15 phút):</p>
+            <p><a href='{resetLink}'>Đặt lại mật khẩu</a></p>
+            <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.</p>";
+
+        await _emailService.SendEmailAsync(admin.Email!, "Yêu cầu đặt lại mật khẩu", emailBody);
+    }
+
+    public async Task ResetPasswordAsync(ResetPasswordRequest request)
+    {
+        var admin = await _context.Admins.FirstOrDefaultAsync(a => a.PasswordResetToken == request.Token);
+
+        if (admin == null || !admin.ResetTokenExpires.HasValue)
+        {
+            throw new BadRequestException("Token không hợp lệ hoặc đã hết hạn.");
+        }
+
+        var expireTime = admin.ResetTokenExpires.Value;
+
+        // So sánh thời gian an toàn chặn cả UTC lẫn Local do Legacy Timestamp
+        if (expireTime < DateTime.UtcNow && expireTime < DateTime.Now)
+        {
+            throw new BadRequestException("Token không hợp lệ hoặc đã hết hạn.");
+        }
+
+        admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        admin.PasswordResetToken = null;
+        admin.ResetTokenExpires = null;
+
+        _adminRepository.Update(admin);
+        await _adminRepository.SaveChangesAsync();
+    }
+
+    // public async Task ChangePasswordAsync(int adminId, ChangePasswordRequest request)
+    // {
+    //     var admin = await _adminRepository.GetByIdAsync(adminId);
+    //     if (admin == null)
+    //     {
+    //         throw new NotFoundException("Không tìm thấy người dùng.");
+    //     }
+
+    //     if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, admin.PasswordHash))
+    //     {
+    //         throw new BadRequestException("Mật khẩu cũ không chính xác.");
+    //     }
+
+    //     admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+
+    //     _adminRepository.Update(admin);
+    //     await _adminRepository.SaveChangesAsync();
+    // }
 }

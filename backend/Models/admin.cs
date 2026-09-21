@@ -9,5 +9,8 @@ public class Admin
     public string? Email { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+
+    public string? PasswordResetToken { get; set; }
+    public DateTime? ResetTokenExpires { get; set; }
     public ICollection<AdminPermission> AdminPermissions { get; set; } = new List<AdminPermission>();
 }
