@@ -6,6 +6,8 @@ import { StudentService } from '../../core/services/student.service';
 import { Student } from '../../core/models/student.model';
 import { Parent } from '../../core/models/parent.model';
 import { ParentService } from '../../core/services/parent.service';
+import { AuthService } from '../../core/auth/auth.service';
+import { ToastService } from '../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-student-detail',
@@ -39,13 +41,13 @@ import { ParentService } from '../../core/services/parent.service';
               <p class="text-sm text-gray-500 dark:text-slate-400">Ngày sinh</p>
               <p class="font-medium">{{ student()?.dateOfBirth | date:'dd/MM/yyyy' }}</p>
             </div>
-            <div>
-              <p class="text-sm text-gray-500 dark:text-slate-400">Giới tính</p>
+            <div class="mb-4">
+              <p class="text-xs text-gray-500 dark:text-slate-400 mb-1">Giới tính</p>
               <p class="font-medium">{{ student()?.gender === 'Male' ? 'Nam' : 'Nữ' }}</p>
             </div>
             <div>
-              <p class="text-sm text-gray-500 dark:text-slate-400">Địa chỉ</p>
-              <p class="font-medium">{{ student()?.address || 'Chưa cập nhật' }}</p>
+              <p class="text-xs text-gray-500 dark:text-slate-400 mb-1">Địa chỉ</p>
+              <div class="font-medium prose prose-sm prose-blue dark:prose-invert max-w-none" [innerHTML]="student()?.address || 'Chưa cập nhật'"></div>
             </div>
           </div>
         </div>
@@ -65,7 +67,7 @@ import { ParentService } from '../../core/services/parent.service';
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Họ Tên</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Vai trò</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Điện thoại</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Thao tác</th>
+                <th *ngIf="authService.hasPermission('student_parent:remove')" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Thao tác</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-slate-700">
@@ -76,7 +78,7 @@ import { ParentService } from '../../core/services/parent.service';
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">{{ parent.phoneNumber }}</td>
                 <td class="px-4 py-3 text-right">
-                  <button (click)="removeParent(parent.id)" class="text-red-500 hover:text-red-700 text-sm font-medium">Gỡ liên kết</button>
+                  <button *ngIf="authService.hasPermission('student_parent:remove')" (click)="removeParent(parent.id)" class="text-red-500 hover:text-red-700 text-sm font-medium">Gỡ liên kết</button>
                 </td>
               </tr>
             </tbody>
@@ -88,7 +90,7 @@ import { ParentService } from '../../core/services/parent.service';
         </div>
 
         <!-- Form Gán thêm Phụ huynh với tính năng Tìm kiếm -->
-        <div class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-lg border border-blue-100 relative">
+        <div *ngIf="authService.hasPermission('student_parent:assign')" class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-lg border border-blue-100 relative">
           <h4 class="font-semibold text-blue-800 dark:text-blue-300 mb-3">Gán thêm Phụ huynh từ Hệ thống</h4>
 
           <!-- Màn chắn (Backdrop) để tắt dropdown khi bấm ra ngoài -->
@@ -170,6 +172,8 @@ export class StudentDetailComponent implements OnInit {
   private studentService = inject(StudentService);
   private parentService = inject(ParentService);
   private location = inject(Location);
+  public authService = inject(AuthService);
+  private toastService = inject(ToastService);
 
   student = signal<Student | null>(null);
 
@@ -197,16 +201,33 @@ export class StudentDetailComponent implements OnInit {
 
   loadData(studentId: number) {
     this.isLoading.set(true);
-    this.studentService.getStudentById(studentId).subscribe(s => {
-      this.student.set(s);
+    this.studentService.getStudentById(studentId).subscribe({
+      next: (s) => {
+        this.student.set(s);
 
-      this.parentService.getAllParents().subscribe(parents => {
-        const linkedIds = s.parents?.map(p => p.id) || [];
-        const unlinked = parents.filter(p => !linkedIds.includes(p.id));
-        this.availableParents.set(unlinked);
-        this.filteredParents.set(unlinked);
+        if (this.authService.hasPermission('parent:read')) {
+          this.parentService.getAllParents().subscribe({
+            next: (parents) => {
+              const linkedIds = s.parents?.map(p => p.id) || [];
+              const unlinked = parents.filter(p => !linkedIds.includes(p.id));
+              this.availableParents.set(unlinked);
+              this.filteredParents.set(unlinked);
+              this.isLoading.set(false);
+            },
+            error: (err) => {
+              console.error('Failed to load parents:', err);
+              this.isLoading.set(false);
+            }
+          });
+        } else {
+          this.isLoading.set(false);
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load student:', err);
+        this.toastService.error('Không thể tải thông tin học sinh.');
         this.isLoading.set(false);
-      });
+      }
     });
   }
 
@@ -260,7 +281,7 @@ export class StudentDetailComponent implements OnInit {
         },
         error: (err) => {
           this.isLinking.set(false);
-          alert('Có lỗi xảy ra khi gán phụ huynh: ' + (err.error?.message || err.message));
+          this.toastService.error('Có lỗi xảy ra khi gán phụ huynh: ' + (err.error?.message || err.message));
         }
       });
   }

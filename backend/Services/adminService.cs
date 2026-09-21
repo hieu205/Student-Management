@@ -77,7 +77,7 @@ public class AdminService : IAdminService
         await _adminRepository.SaveChangesAsync();
     }
 
-    public async Task SyncPermissionsAsync(int adminId, List<int> targetPermissionIds)
+    public async Task SyncPermissionsAsync(int adminId, List<string> targetPermissionCodes)
     {
         // 1. Kiểm tra Admin có tồn tại không
         var admin = await _adminRepository.GetByIdAsync(adminId);
@@ -86,19 +86,21 @@ public class AdminService : IAdminService
             throw new NotFoundException($"Không tìm thấy admin có id {adminId}");
         }
 
-        targetPermissionIds = targetPermissionIds?.Distinct().ToList() ?? new List<int>();
+        targetPermissionCodes = targetPermissionCodes?.Distinct().ToList() ?? new List<string>();
 
-        // 2. Lấy các ID quyền thực sự hợp lệ tồn tại trong bảng Permissions
-        var validPermissionIds = await _context.Permissions
-            .Where(p => targetPermissionIds.Contains(p.Id))
-            .Select(p => p.Id)
+        // 2. Lấy các quyền thực sự hợp lệ tồn tại trong bảng Permissions
+        var validPermissions = await _context.Permissions
+            .Where(p => targetPermissionCodes.Contains(p.Code))
             .ToListAsync();
 
-        // ⚠️ ĐOẠN CHECK MỚI: Kiểm tra xem có ID nào Frontend gửi lên bị thiếu trong DB không
-        var invalidIds = targetPermissionIds.Except(validPermissionIds).ToList();
-        if (invalidIds.Any())
+        var validPermissionIds = validPermissions.Select(p => p.Id).ToList();
+        var validPermissionCodes = validPermissions.Select(p => p.Code).ToList();
+
+        // ⚠️ ĐOẠN CHECK MỚI: Kiểm tra xem có code nào Frontend gửi lên bị thiếu trong DB không
+        var invalidCodes = targetPermissionCodes.Except(validPermissionCodes).ToList();
+        if (invalidCodes.Any())
         {
-            throw new NotFoundException($"Các quyền sau không tồn tại trong hệ thống: {string.Join(", ", invalidIds)}");
+            throw new NotFoundException($"Các quyền sau không tồn tại trong hệ thống: {string.Join(", ", invalidCodes)}");
         }
 
         // 3. Lấy danh sách các quyền HIỆN TẠI của Admin trong DB
@@ -143,12 +145,18 @@ public class AdminService : IAdminService
 
     private static AdminResponse MapToResponse(Admin admin)
     {
+        var permissions = admin.AdminPermissions?
+            .Where(ap => ap.Permission != null)
+            .Select(ap => ap.Permission.Code)
+            .ToList() ?? new List<string>();
+
         return new AdminResponse
         {
             Id = admin.Id,
             Username = admin.Username,
             FullName = admin.FullName,
-            Email = admin.Email ?? string.Empty
+            Email = admin.Email ?? string.Empty,
+            Permissions = permissions
         };
     }
 }

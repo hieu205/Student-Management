@@ -15,12 +15,19 @@ public class AdminRepository : IAdminRepository
 
     public async Task<List<Admin>> GetAllAsync()
     {
-        return await _context.Admins.AsNoTracking().ToListAsync();
+        return await _context.Admins
+            .Include(a => a.AdminPermissions)
+            .ThenInclude(ap => ap.Permission)
+            .AsNoTracking()
+            .ToListAsync();
     }
 
     public async Task<Admin?> GetByIdAsync(int id)
     {
-        return await _context.Admins.FindAsync(id);
+        return await _context.Admins
+            .Include(a => a.AdminPermissions)
+            .ThenInclude(ap => ap.Permission)
+            .FirstOrDefaultAsync(a => a.Id == id);
     }
 
     public async Task<Admin?> GetByUsernameAsync(string username)

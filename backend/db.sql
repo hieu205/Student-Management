@@ -1,4 +1,3 @@
-
 -- ============================================
 -- Student Management System — PostgreSQL Schema
 -- ============================================
@@ -50,3 +49,49 @@ CREATE INDEX idx_student_parent_parent_id ON student_parent (parent_id);
 
 ALTER TABLE student
 ADD COLUMN mhs VARCHAR(20) NOT NULL UNIQUE;
+
+-- 1. Bảng Permission (Đơn vị quyền nhỏ nhất)
+CREATE TABLE permission (
+    id          SERIAL PRIMARY KEY,
+    code        VARCHAR(100) NOT NULL UNIQUE,   -- vd: student:create
+    description VARCHAR(255)
+);
+
+-- 2. Bảng Role (Chỉ dùng làm khuôn mẫu)
+CREATE TABLE role (
+    id          SERIAL PRIMARY KEY,
+    name        VARCHAR(50) NOT NULL UNIQUE,    -- vd: STUDENT_MANAGER
+    description VARCHAR(255)
+);
+
+-- 3. Bảng Role_Permission (Template mapping)
+CREATE TABLE role_permission (
+    role_id       INT NOT NULL REFERENCES role(id)       ON DELETE CASCADE,
+    permission_id INT NOT NULL REFERENCES permission(id) ON DELETE CASCADE,
+    PRIMARY KEY (role_id, permission_id)
+);
+
+-- 4. Bảng Admin_Permission (Bảng thực tế quyết định quyền của Admin)
+CREATE TABLE admin_permission (
+    admin_id      INT NOT NULL REFERENCES admin(id)      ON DELETE CASCADE,
+    permission_id INT NOT NULL REFERENCES permission(id) ON DELETE CASCADE,
+    PRIMARY KEY (admin_id, permission_id)
+);
+
+-- 5. Xóa cột role_id ở bảng admin cũ
+ALTER TABLE admin DROP COLUMN role_id;
+
+-- ============================================
+-- Cập nhật bổ sung cho bảng admin (Forgot Password Feature)
+-- ============================================
+
+-- 1. Thêm cột password_reset_token để lưu Token đặt lại mật khẩu
+ALTER TABLE admin 
+ADD COLUMN password_reset_token VARCHAR(255);
+
+-- 2. Thêm cột reset_token_expires để lưu thời gian hết hạn của Token
+ALTER TABLE admin 
+ADD COLUMN reset_token_expires TIMESTAMP;
+
+-- 3. (Tùy chọn tối ưu) Tạo Index giúp truy vấn tìm kiếm Token trong DB nhanh hơn
+CREATE INDEX idx_admin_password_reset_token ON admin (password_reset_token);

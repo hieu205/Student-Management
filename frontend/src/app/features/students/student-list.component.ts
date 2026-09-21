@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterModule } from '@angular/router';
 import { StudentService } from '../../core/services/student.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { Student } from '../../core/models/student.model';
 import { StudentFormComponent } from './student-form.component';
 
@@ -47,7 +48,7 @@ import { StudentFormComponent } from './student-form.component';
             </div>
           </div>
 
-          <button
+          <button *ngIf="authService.hasPermission('student:create')"
             (click)="openAddModal()"
             class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center transition-all shadow-sm hover:shadow-md whitespace-nowrap flex-shrink-0">
             <svg class="h-5 w-5 mr-1.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -151,7 +152,7 @@ import { StudentFormComponent } from './student-form.component';
                   </div>
                 </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle truncate max-w-[150px]" [title]="student.address || ''">{{ student.address || '—' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle truncate max-w-[150px]" [title]="stripHtml(student.address)">{{ stripHtml(student.address) || '—' }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium action-dropdown-container relative align-middle">
                 <button (click)="toggleDropdown(student.id, $event)" class="text-gray-400 hover:text-blue-600 dark:text-blue-400 p-2 rounded-full hover:bg-blue-50 dark:bg-blue-900/20 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-100">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
@@ -163,12 +164,12 @@ import { StudentFormComponent } from './student-form.component';
                       <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                       Chi tiết
                     </a>
-                    <button (click)="openEditModal(student.id)" class="w-full px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-orange-500 flex items-center transition-colors cursor-pointer text-left">
+                    <button *ngIf="authService.hasPermission('student:update')" (click)="openEditModal(student.id)" class="w-full px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-orange-500 flex items-center transition-colors cursor-pointer text-left">
                       <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                       Sửa
                     </button>
                     <div class="border-t border-gray-100 dark:border-slate-700 my-1"></div>
-                    <button (click)="confirmDelete(student.id)" class="w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center transition-colors text-left">
+                    <button *ngIf="authService.hasPermission('student:delete')" (click)="confirmDelete(student.id)" class="w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center transition-colors cursor-pointer text-left">
                       <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       Xóa
                     </button>
@@ -206,8 +207,8 @@ import { StudentFormComponent } from './student-form.component';
               <div *ngIf="activeDropdown() === student.id" class="absolute right-0 top-6 w-36 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 z-50 animate-fade-in-up text-left overflow-hidden">
                 <div class="py-1">
                   <a [routerLink]="['/students/detail', student.id]" class="px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center">Chi tiết</a>
-                  <button (click)="openEditModal(student.id)" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-orange-500 flex items-center">Sửa</button>
-                  <button (click)="confirmDelete(student.id)" class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center">Xóa</button>
+                  <button *ngIf="authService.hasPermission('student:update')" (click)="openEditModal(student.id)" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-orange-500 flex items-center">Sửa</button>
+                  <button *ngIf="authService.hasPermission('student:delete')" (click)="confirmDelete(student.id)" class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center">Xóa</button>
                 </div>
               </div>
             </div>
@@ -231,7 +232,7 @@ import { StudentFormComponent } from './student-form.component';
               </div>
               <div class="flex justify-between items-center gap-2">
                 <span class="text-gray-500 dark:text-slate-400 whitespace-nowrap shrink-0">Địa chỉ:</span>
-                <span class="font-medium text-gray-700 dark:text-slate-200 truncate" [title]="student.address || ''">{{ student.address || '—' }}</span>
+                <span class="font-medium text-gray-700 dark:text-slate-200 truncate" [title]="stripHtml(student.address)">{{ stripHtml(student.address) || '—' }}</span>
               </div>
             </div>
 
@@ -337,6 +338,7 @@ import { StudentFormComponent } from './student-form.component';
 })
 export class StudentListComponent implements OnInit {
   private studentService = inject(StudentService);
+  public authService = inject(AuthService);
 
   students = signal<Student[]>([]);
   totalCount = signal(0);
@@ -405,6 +407,8 @@ export class StudentListComponent implements OnInit {
           this.students.set([]);
           if (err.status === 401) {
             alert('Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng F5 (tải lại trang) hoặc đăng nhập lại!');
+          } else if (err.status === 403) {
+            alert('Bạn không có quyền xem danh sách Học sinh!');
           } else {
             alert('Không thể kết nối đến máy chủ Backend. Vui lòng kiểm tra lại!');
           }
@@ -422,6 +426,11 @@ export class StudentListComponent implements OnInit {
       this.currentPage.set(page);
       this.loadStudents();
     }
+  }
+
+  stripHtml(html: string | undefined | null): string {
+    if (!html) return '';
+    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
   }
 
   toggleDropdown(id: number, event: Event) {
