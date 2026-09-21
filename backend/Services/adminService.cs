@@ -65,12 +65,29 @@ public class AdminService : IAdminService
         return MapToResponse(admin);
     }
 
-    public async Task DeleteAdmin(int id)
+    public async Task DeleteAdmin(int id, int requesterId)
     {
         var admin = await _adminRepository.GetByIdAsync(id);
         if (admin == null)
         {
             throw new NotFoundException($"Không tìm thấy admin có id {id}");
+        }
+
+        // Không cho phép tự xóa chính mình
+        if (id == requesterId)
+        {
+            throw new ForbiddenException("Bạn không thể tự xóa tài khoản của chính mình.");
+        }
+
+        // Không cho phép xóa Admin tổng (admin có toàn bộ quyền trong hệ thống)
+        var totalPermissionsInSystem = await _context.Permissions.CountAsync();
+        var adminPermissionCount = await _context.AdminPermissions
+            .Where(ap => ap.AdminId == id)
+            .CountAsync();
+
+        if (adminPermissionCount >= totalPermissionsInSystem && totalPermissionsInSystem > 0)
+        {
+            throw new ForbiddenException("Không thể xóa tài khoản Admin tổng của hệ thống.");
         }
 
         _adminRepository.Delete(admin);
