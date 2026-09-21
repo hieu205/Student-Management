@@ -14,6 +14,7 @@ using demo_dotnet.backend.Security;
 using demo_dotnet.backend.Services;
 using demo_dotnet.backend.Services.Interface;
 
+
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,14 +29,16 @@ builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<IParentRepository, ParentRepository>();
 builder.Services.AddScoped<IStudentParentRepository, StudentParentRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 
-builder.Services.AddScoped<IEmailService, EmailService>(); // 👈 Đã thêm EmailService
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSingleton<IEmailQueueService, EmailQueueService>();
 builder.Services.AddHostedService<EmailWorkerService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IParentService, ParentService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 
 // 3. CONTROLLERS & VALIDATION RESPONSE FORMAT
 builder.Services.AddControllers()
