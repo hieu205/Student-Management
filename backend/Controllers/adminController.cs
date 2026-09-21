@@ -47,6 +47,7 @@ public class AdminController : ControllerBase
     [HasPermission("admin:delete")]
     public async Task<IActionResult> Delete([FromRoute] int id)
     {
+        await _adminService.DeleteAdmin(id);
         var requesterIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (!int.TryParse(requesterIdClaim, out int requesterId))
             return Unauthorized();

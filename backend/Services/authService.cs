@@ -8,6 +8,7 @@ using demo_dotnet.backend.DTOs.Request;
 using demo_dotnet.backend.DTOs.Response;
 using demo_dotnet.backend.exception;
 using demo_dotnet.backend.Models;
+using demo_dotnet.backend.Models;
 using demo_dotnet.backend.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -19,18 +20,18 @@ public class AuthService : IAuthService
     private readonly IAdminRepository _adminRepository;
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
-    private readonly IEmailService _emailService;
+    private readonly IEmailQueueService _emailQueueService;
 
     public AuthService(
         IAdminRepository adminRepository,
         AppDbContext context,
         IConfiguration configuration,
-        IEmailService emailService)
+        IEmailQueueService emailQueueService)
     {
         _adminRepository = adminRepository;
         _context = context;
         _configuration = configuration;
-        _emailService = emailService;
+        _emailQueueService = emailQueueService;
     }
 
     public async Task<LoginResponseDto> LoginAsync(LoginRequest request)
@@ -189,7 +190,14 @@ public class AuthService : IAuthService
             <p><a href='{resetLink}'>Đặt lại mật khẩu</a></p>
             <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.</p>";
 
-        await _emailService.SendEmailAsync(admin.Email!, "Yêu cầu đặt lại mật khẩu", emailBody);
+        var emailMessage = new EmailMessage
+        {
+            To = admin.Email!,
+            Subject = "Yêu cầu đặt lại mật khẩu",
+            Body = emailBody
+        };
+
+        await _emailQueueService.EnqueueAsync(emailMessage);
     }
 
     public async Task ResetPasswordAsync(ResetPasswordRequest request)
