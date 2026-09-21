@@ -1,0 +1,83 @@
+
+-- ============================================
+-- Student Management System — PostgreSQL Schema
+-- ============================================
+ 
+-- Bảng Admin (tài khoản đăng nhập duy nhất)
+CREATE TABLE admin (
+    id            SERIAL PRIMARY KEY,
+    username      VARCHAR(50)  NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name     VARCHAR(100) NOT NULL,
+    email         VARCHAR(100),
+    role_id       INT NOT NULL DEFAULT 1,
+    created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+ 
+-- Bảng Student
+CREATE TABLE student (
+    id             SERIAL PRIMARY KEY,
+    full_name      VARCHAR(100) NOT NULL,
+    date_of_birth  VARCHAR(50),
+    gender         VARCHAR(10) CHECK (gender IN ('Male', 'Female')),
+    class_name     VARCHAR(20),
+    address        VARCHAR(255)
+);
+ 
+-- Bảng Parent
+CREATE TABLE parent (
+    id            SERIAL PRIMARY KEY,
+    full_name     VARCHAR(100) NOT NULL,
+    phone_number  VARCHAR(20) NOT NULL UNIQUE,
+    email         VARCHAR(100),
+    occupation    VARCHAR(100),
+    created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+ 
+-- Bảng trung gian Student <-> Parent (n-n)
+CREATE TABLE student_parent (
+    student_id        INT NOT NULL REFERENCES student(id) ON DELETE CASCADE,
+    parent_id         INT NOT NULL REFERENCES parent(id) ON DELETE CASCADE,
+    relationship_type VARCHAR(20) NOT NULL CHECK (relationship_type IN ('Father', 'Mother', 'Guardian')),
+    PRIMARY KEY (student_id, parent_id)
+);
+ 
+-- Index phụ trợ cho tìm kiếm/lọc thường dùng
+CREATE INDEX idx_student_full_name ON student (full_name);
+CREATE INDEX idx_student_class_name ON student (class_name);
+CREATE INDEX idx_parent_full_name ON parent (full_name);
+CREATE INDEX idx_student_parent_parent_id ON student_parent (parent_id);
+
+ALTER TABLE student
+ADD COLUMN mhs VARCHAR(20) NOT NULL UNIQUE;
+
+-- 1. Bảng Permission (Đơn vị quyền nhỏ nhất)
+CREATE TABLE permission (
+    id          SERIAL PRIMARY KEY,
+    code        VARCHAR(100) NOT NULL UNIQUE,   -- vd: student:create
+    description VARCHAR(255)
+);
+
+-- 2. Bảng Role (Chỉ dùng làm khuôn mẫu)
+CREATE TABLE role (
+    id          SERIAL PRIMARY KEY,
+    name        VARCHAR(50) NOT NULL UNIQUE,    -- vd: STUDENT_MANAGER
+    description VARCHAR(255)
+);
+
+-- 3. Bảng Role_Permission (Template mapping)
+CREATE TABLE role_permission (
+    role_id       INT NOT NULL REFERENCES role(id)       ON DELETE CASCADE,
+    permission_id INT NOT NULL REFERENCES permission(id) ON DELETE CASCADE,
+    PRIMARY KEY (role_id, permission_id)
+);
+
+-- 4. Bảng Admin_Permission (Bảng thực tế quyết định quyền của Admin)
+CREATE TABLE admin_permission (
+    admin_id      INT NOT NULL REFERENCES admin(id)      ON DELETE CASCADE,
+    permission_id INT NOT NULL REFERENCES permission(id) ON DELETE CASCADE,
+    PRIMARY KEY (admin_id, permission_id)
+);
+
+-- 5. Xóa cột role_id ở bảng admin cũ
+ALTER TABLE admin DROP COLUMN role_id;
