@@ -65,6 +65,7 @@ public class AdminService : IAdminService
         return MapToResponse(admin);
     }
 
+    public async Task DeleteAdmin(int id)
     public async Task DeleteAdmin(int id, int requesterId)
     {
         var admin = await _adminRepository.GetByIdAsync(id);
