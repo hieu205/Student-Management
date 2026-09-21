@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -8,6 +9,7 @@ using demo_dotnet.backend.Data;
 using demo_dotnet.backend.Data.Interfaces;
 using demo_dotnet.backend.Data.Repositories;
 using demo_dotnet.backend.exception;
+using demo_dotnet.backend.Security;
 using demo_dotnet.backend.Services;
 using demo_dotnet.backend.Services.Interface;
 
@@ -29,8 +31,7 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IParentService, ParentService>();
 
-
-// 3. CONTROLLERS & VALIDATION RESPONSE FORMAT
+// 3. CONTROLLERS & VALIDATION RESPONSE FORMAT (FIX CHỐNG TRÙNG KEY AN TOÀN)
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(options =>
     {
@@ -38,10 +39,17 @@ builder.Services.AddControllers()
         {
             var errors = context.ModelState
                 .Where(e => e.Value?.Errors.Count > 0)
-                .ToDictionary(
-                    kvp => char.ToLowerInvariant(kvp.Key[0]) + kvp.Key[1..],
-                    kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
-                );
+                .SelectMany(e =>
+                {
+                    var rawKey = e.Key;
+                    var key = string.IsNullOrEmpty(rawKey)
+                        ? "request"
+                        : char.ToLowerInvariant(rawKey[0]) + (rawKey.Length > 1 ? rawKey[1..] : string.Empty);
+
+                    return e.Value!.Errors.Select(err => new { Key = key, Message = err.ErrorMessage });
+                })
+                .ToLookup(x => x.Key, x => x.Message)
+                .ToDictionary(g => g.Key, g => g.ToArray());
 
             var result = new
             {
@@ -54,7 +62,6 @@ builder.Services.AddControllers()
     });
 
 // 4. JWT AUTHENTICATION
-// FIX: không dùng fallback hardcode nữa -> throw ngay nếu thiếu config, tránh lộ secret trong source code
 var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? throw new InvalidOperationException("Jwt:Secret chưa được cấu hình trong appsettings.json");
 var key = Encoding.UTF8.GetBytes(jwtSecret);
@@ -74,14 +81,16 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateIssuer = false,
         ValidateAudience = false,
-        ValidateLifetime = true,          // FIX: viết tường minh (mặc định đã true nhưng nên rõ ràng)
-        ClockSkew = TimeSpan.Zero         // không cho phép trễ hạn token (mặc định .NET cho phép trễ 5 phút)
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
     };
 });
 
+// 5. AUTHORIZATION & DYNAMIC PERMISSION PROVIDER
 builder.Services.AddAuthorization();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 
-// 5. CORS
+// 6. CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontendPolicy", policy =>
@@ -93,9 +102,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// SWAGGER GENERATOR
-// FIX: Swashbuckle.AspNetCore 10.x dùng Microsoft.OpenApi 2.x -> namespace đổi từ
-// Microsoft.OpenApi.Models sang Microsoft.OpenApi (đã using ở đầu file nên bỏ được tiền tố dài)
+// 7. SWAGGER GENERATOR
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -115,11 +122,6 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Nhập token JWT dạng: Bearer {accessToken}"
     });
 
-    // FIX: Swashbuckle v10 xóa hẳn OpenApiSecurityScheme.Reference và OpenApiReference.
-    // AddSecurityRequirement giờ nhận delegate Func<OpenApiDocument, OpenApiSecurityRequirement>,
-    // và dùng OpenApiSecuritySchemeReference("Bearer", document) thay cho Reference cũ.
-    // FIX: value của OpenApiSecurityRequirement trong Microsoft.OpenApi v2 là List<string>,
-    // Array.Empty<string>() trả về string[] nên không convert ngầm được -> phải dùng new List<string>()
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
     {
         [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
@@ -128,7 +130,7 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// 7. MIDDLEWARE PIPELINE
+// 8. MIDDLEWARE PIPELINE
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -141,6 +143,7 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+
 app.UseCors("AllowFrontendPolicy");
 
 app.UseAuthentication();
