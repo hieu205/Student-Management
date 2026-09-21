@@ -1,4 +1,4 @@
-﻿import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -12,7 +12,7 @@ import { AuthService } from '../../core/auth/auth.service';
     <div class="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div class="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden">
         <div class="p-8 sm:p-10 flex flex-col justify-center">
-          
+
           <div *ngIf="step === 'verifying'" class="text-center py-8">
             <svg class="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -78,9 +78,9 @@ import { AuthService } from '../../core/auth/auth.service';
                     <svg *ngIf="showConfirmPassword" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
                   </button>
                 </div>
-                <div *ngIf="submitted() && (f['confirmPassword'].errors || resetForm.errors?.['passwordMismatch'])" class="text-red-500 text-xs mt-1 font-medium">
+                <div *ngIf="submitted() && (f['confirmPassword'].errors || resetForm.errors?.['passwordMismatch'])" class="text-red-500 text-xs mt-1 font-medium flex flex-col">
                   <span *ngIf="f['confirmPassword'].errors?.['required']">Vui lòng xác nhận mật khẩu</span>
-                  <span *ngIf="resetForm.errors?.['passwordMismatch']">Mật khẩu xác nhận không khớp</span>
+                  <span *ngIf="resetForm.errors?.['passwordMismatch'] && !f['confirmPassword'].errors?.['required']">Mật khẩu xác nhận không khớp</span>
                 </div>
               </div>
 
@@ -106,11 +106,11 @@ import { AuthService } from '../../core/auth/auth.service';
             <p class="text-sm text-gray-600 dark:text-slate-300 mb-8">Mật khẩu của bạn đã được cập nhật. Bạn có thể sử dụng mật khẩu mới để đăng nhập.</p>
             <button (click)="goToLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors shadow-md">Đến trang Đăng nhập</button>
           </div>
-          
+
         </div>
       </div>
     </div>
-    
+
     <style>
       .animate-fade-in-up {
         animation: fadeInUp 0.3s ease-out;
@@ -130,7 +130,7 @@ export class ResetPasswordComponent implements OnInit {
 
   token = '';
   step: 'verifying' | 'invalid' | 'reset' | 'success' = 'verifying';
-  
+
   resetForm: FormGroup = this.fb.group({
     newPassword: ['', [
       Validators.required,
@@ -174,7 +174,7 @@ export class ResetPasswordComponent implements OnInit {
     }
 
     this.isLoading.set(true);
-    
+
     this.authService.resetPassword(this.token, this.resetForm.value.newPassword).subscribe({
       next: () => {
         this.isLoading.set(false);
