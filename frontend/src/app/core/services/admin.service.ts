@@ -76,5 +76,17 @@ export class AdminService {
     // Fake success response
     return of({ success: true, permissions });
   }
+
+  addAdmin(data: any): Observable<AdminResponse> {
+    const newAdmin: AdminResponse = {
+      id: Math.floor(Math.random() * 1000) + 10,
+      username: data.username,
+      fullName: data.fullName,
+      email: data.email,
+      createdAt: new Date().toISOString(),
+      permissions: []
+    };
+    return of(newAdmin);
+  }
 }
 

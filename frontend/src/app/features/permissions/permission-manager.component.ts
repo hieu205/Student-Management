@@ -24,7 +24,13 @@ interface PermissionGroup {
       <!-- Left Column: User List & Search -->
       <div class="w-full md:w-1/3 flex flex-col bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden shrink-0 h-[calc(100vh-8rem)]">
         <div class="p-4 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900">
-          <h2 class="text-lg font-bold text-gray-800 dark:text-slate-100">Tài khoản Người dùng</h2>
+          <div class="flex justify-between items-center">
+            <h2 class="text-lg font-bold text-gray-800 dark:text-slate-100">Tài khoản Admin</h2>
+            <button (click)="openAddModal()" class="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors shadow-sm">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+              Thêm mới
+            </button>
+          </div>
 
           <!-- Search Bar -->
           <div class="mt-3 relative">
@@ -147,6 +153,46 @@ interface PermissionGroup {
 
       </div>
     </div>
+
+    <!-- Add Admin Modal -->
+    <div *ngIf="showAddModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
+      <div class="fixed inset-0 bg-gray-900/60 dark:bg-gray-900/80 backdrop-blur-sm transition-opacity" (click)="closeAddModal()"></div>
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden relative z-10 animate-fade-in-up border border-gray-100 dark:border-slate-700">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/50">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white">Thêm Admin mới</h3>
+          <button (click)="closeAddModal()" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <form (ngSubmit)="submitAddAdmin()" #addForm="ngForm" class="p-6 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Họ và Tên <span class="text-red-500">*</span></label>
+            <input type="text" [(ngModel)]="newAdmin.fullName" name="fullName" required class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Tên đăng nhập (Username) <span class="text-red-500">*</span></label>
+            <input type="text" [(ngModel)]="newAdmin.username" name="username" required class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Email</label>
+            <input type="email" [(ngModel)]="newAdmin.email" name="email" class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Mật khẩu khởi tạo <span class="text-red-500">*</span></label>
+            <input type="password" [(ngModel)]="newAdmin.password" name="password" required class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors">
+          </div>
+
+          <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 dark:border-slate-700 mt-6">
+            <button type="button" (click)="closeAddModal()" class="px-4 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">Hủy</button>
+            <button type="submit" [disabled]="addForm.invalid || isAdding()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-colors disabled:opacity-50 flex items-center">
+              <svg *ngIf="isAdding()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              Tạo tài khoản
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   `
 })
 export class PermissionManagerComponent implements OnInit {
@@ -168,7 +214,16 @@ export class PermissionManagerComponent implements OnInit {
 
   isLoading = signal(false);
   isSaving = signal(false);
+  isAdding = signal(false);
   showSuccessMsg = signal(false);
+  showAddModal = signal(false);
+
+  newAdmin = {
+    fullName: '',
+    username: '',
+    email: '',
+    password: ''
+  };
 
   selectedUser = signal<AdminResponse | null>(null);
   currentPermissions = signal<Set<string>>(new Set());
@@ -176,20 +231,23 @@ export class PermissionManagerComponent implements OnInit {
   // Define Groups matching EXACTLY with BE database
   groups: PermissionGroup[] = [
     {
-      name: 'Quản lý Học sinh & Phụ huynh',
+      name: 'Quản lý Học sinh',
       items: [
         { code: 'student:read', label: 'Xem danh sách & chi tiết sinh viên' },
         { code: 'student:create', label: 'Thêm mới sinh viên', implicitReads: ['student:read'] },
         { code: 'student:update', label: 'Cập nhật thông tin sinh viên', implicitReads: ['student:read'] },
         { code: 'student:delete', label: 'Xóa sinh viên', implicitReads: ['student:read'] },
-
+        { code: 'student_parent:assign', label: 'Gán phụ huynh cho sinh viên', implicitReads: ['student:read', 'parent:read'] },
+        { code: 'student_parent:remove', label: 'Hủy liên kết sinh viên - phụ huynh', implicitReads: ['student:read', 'parent:read'] }
+      ]
+    },
+    {
+      name: 'Quản lý Phụ huynh',
+      items: [
         { code: 'parent:read', label: 'Xem danh sách & chi tiết phụ huynh' },
         { code: 'parent:create', label: 'Thêm mới phụ huynh', implicitReads: ['parent:read'] },
         { code: 'parent:update', label: 'Cập nhật thông tin phụ huynh', implicitReads: ['parent:read'] },
-        { code: 'parent:delete', label: 'Xóa phụ huynh', implicitReads: ['parent:read'] },
-
-        { code: 'student_parent:assign', label: 'Gán phụ huynh cho sinh viên', implicitReads: ['student:read', 'parent:read'] },
-        { code: 'student_parent:remove', label: 'Hủy liên kết sinh viên - phụ huynh', implicitReads: ['student:read', 'parent:read'] }
+        { code: 'parent:delete', label: 'Xóa phụ huynh', implicitReads: ['parent:read'] }
       ]
     },
     {
@@ -313,6 +371,34 @@ export class PermissionManagerComponent implements OnInit {
       error: () => {
         this.isSaving.set(false);
         alert('Có lỗi xảy ra khi lưu phân quyền.');
+      }
+    });
+  }
+
+  openAddModal() {
+    this.newAdmin = { fullName: '', username: '', email: '', password: '' };
+    this.showAddModal.set(true);
+  }
+
+  closeAddModal() {
+    this.showAddModal.set(false);
+  }
+
+  submitAddAdmin() {
+    if (!this.newAdmin.fullName || !this.newAdmin.username || !this.newAdmin.password) return;
+
+    this.isAdding.set(true);
+    this.adminService.addAdmin(this.newAdmin).subscribe({
+      next: (admin) => {
+        const updatedUsers = [admin, ...this.allUsers()];
+        this.allUsers.set(updatedUsers);
+        this.isAdding.set(false);
+        this.closeAddModal();
+        this.selectUser(admin); // Tự động chọn user mới tạo
+      },
+      error: () => {
+        this.isAdding.set(false);
+        alert('Có lỗi xảy ra khi tạo tài khoản.');
       }
     });
   }
