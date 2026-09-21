@@ -20,7 +20,7 @@ import { AuthService } from '../../core/auth/auth.service';
 
           <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-5">
             <div>
-              <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1.5" for="username">Tên đăng nhập</label>
+              <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1.5" for="username">Tên đăng nhập <span class="text-red-500">*</span></label>
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                   <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -38,7 +38,7 @@ import { AuthService } from '../../core/auth/auth.service';
             </div>
 
             <div>
-              <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1.5" for="password">Mật khẩu</label>
+              <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1.5" for="password">Mật khẩu <span class="text-red-500">*</span></label>
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                   <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -60,6 +60,7 @@ import { AuthService } from '../../core/auth/auth.service';
               </div>
               <div *ngIf="submitted() && f['password'].errors" class="text-red-500 text-xs mt-1 font-medium">
                 <span *ngIf="f['password'].errors['required']">Vui lòng nhập mật khẩu</span>
+                <span *ngIf="f['password'].errors['pattern']">Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt</span>
               </div>
             </div>
 
@@ -170,13 +171,19 @@ import { AuthService } from '../../core/auth/auth.service';
             <!-- Bước 1: Nhập Email -->
             <div *ngIf="forgotStep === 1">
               <p class="text-sm text-gray-600 dark:text-slate-300 mb-4">Vui lòng nhập địa chỉ email đã đăng ký của bạn. Hệ thống sẽ gửi một liên kết để bạn đặt lại mật khẩu mới.</p>
+
+              <div *ngIf="forgotErrorMessage" class="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 rounded text-sm flex items-start font-medium shadow-sm">
+                <svg class="w-5 h-5 mr-2 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+                <span>{{ forgotErrorMessage }}</span>
+              </div>
+
               <div class="mb-4">
                 <label class="block text-gray-700 dark:text-slate-300 text-sm font-bold mb-2">Địa chỉ Email <span class="text-red-500">*</span></label>
-                <input type="email" [(ngModel)]="resetEmail" class="shadow-sm appearance-none border rounded-lg w-full py-2.5 px-3 bg-white dark:bg-slate-700 text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="example@gmail.com">
+                <input type="email" [(ngModel)]="resetEmail" (keydown.enter)="sendResetLink()" class="shadow-sm appearance-none border rounded-lg w-full py-2.5 px-3 bg-white dark:bg-slate-700 text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="example@gmail.com">
               </div>
-              <button (click)="sendResetLink()" [disabled]="!resetEmail || isSendingLink" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all disabled:opacity-70 flex justify-center items-center shadow-md">
+              <button (click)="sendResetLink()" [disabled]="isSendingLink" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all disabled:opacity-70 flex justify-center items-center shadow-md">
                 <svg *ngIf="isSendingLink" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                Gửi liên kết khôi phục
+                {{ isSendingLink ? 'Đang gửi...' : 'Gửi liên kết khôi phục' }}
               </button>
             </div>
 
@@ -234,6 +241,17 @@ export class LoginComponent {
   forgotStep = 1;
   resetEmail = '';
   isSendingLink = false;
+  forgotErrorMessage = '';
+
+  ngOnInit() {
+    const rememberedUsername = localStorage.getItem('remembered_username');
+    if (rememberedUsername) {
+      this.loginForm.patchValue({
+        username: rememberedUsername,
+        rememberMe: true
+      });
+    }
+  }
 
   get f() { return this.loginForm.controls; }
 
@@ -295,21 +313,39 @@ export class LoginComponent {
       this.forgotStep = 1;
       this.resetEmail = '';
       this.isSendingLink = false;
+      this.forgotErrorMessage = '';
     }, 300);
   }
 
   sendResetLink() {
-    if (!this.resetEmail) return;
+    this.forgotErrorMessage = '';
+
+    if (!this.resetEmail) {
+      this.forgotErrorMessage = 'Vui lòng nhập địa chỉ email.';
+      return;
+    }
+
+    // Simple email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(this.resetEmail)) {
+      this.forgotErrorMessage = 'Định dạng email không hợp lệ. Vui lòng nhập đúng định dạng (VD: example@gmail.com).';
+      return;
+    }
+
     this.isSendingLink = true;
     this.authService.forgotPassword(this.resetEmail).subscribe({
       next: () => {
         this.isSendingLink = false;
         this.forgotStep = 2; // Success step
       },
-      error: () => {
+      error: (err) => {
         this.isSendingLink = false;
-        // To prevent email enumeration, usually we still show success.
-        this.forgotStep = 2;
+        // Display precise error from backend (like Email not found)
+        if (err.status === 404 || err.status === 400) {
+          this.forgotErrorMessage = err.error?.message || 'Email không tồn tại trên hệ thống.';
+        } else {
+          this.forgotErrorMessage = 'Có lỗi xảy ra khi gửi yêu cầu. Vui lòng thử lại sau.';
+        }
       }
     });
   }
