@@ -36,3 +36,9 @@ public class UnauthorizedException : AppException
     public UnauthorizedException(string message = "Chưa đăng nhập hoặc token hết hạn")
         : base(message, HttpStatusCode.Unauthorized) { }
 }
+
+public class ForbiddenException : AppException
+{
+    public ForbiddenException(string message = "Bạn không có quyền thực hiện hành động này")
+        : base(message, HttpStatusCode.Forbidden) { }
+}
