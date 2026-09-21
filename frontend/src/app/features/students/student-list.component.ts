@@ -152,7 +152,7 @@ import { StudentFormComponent } from './student-form.component';
                   </div>
                 </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle truncate max-w-[150px]" [title]="stripHtml(student.address)">{{ stripHtml(student.address) || '—' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-300 align-middle truncate max-w-[150px]" [title]="formatAddress(student.address)">{{ formatAddress(student.address) || '—' }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium action-dropdown-container relative align-middle">
                 <button (click)="toggleDropdown(student.id, $event)" class="text-gray-400 hover:text-blue-600 dark:text-blue-400 p-2 rounded-full hover:bg-blue-50 dark:bg-blue-900/20 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-100">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
@@ -430,7 +430,35 @@ export class StudentListComponent implements OnInit {
 
   stripHtml(html: string | undefined | null): string {
     if (!html) return '';
-    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+    // Replace </li>, </div>, <br> with comma+space to preserve separation in lists
+    let formatted = html.replace(/<\/(li|div|p)>|<br\s*\/?>/gi, ', ');
+    // Remove remaining HTML tags
+    formatted = formatted.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+    // Clean up trailing or multiple commas
+    formatted = formatted.replace(/,\s*,/g, ',').replace(/,\s*$/, '');
+    return formatted;
+  }
+
+  formatAddress(addressData: string | undefined | null): string {
+    if (!addressData) return '';
+    try {
+      // Nếu địa chỉ lưu dưới dạng JSON mảng (ví dụ: '["Ngõ 1","Nội Bài","Hà Nội"]')
+      if (addressData.startsWith('[') && addressData.endsWith(']')) {
+        const arr = JSON.parse(addressData);
+        if (Array.isArray(arr)) {
+          return arr.filter(item => item).join(', '); // Nối các phần tử bằng dấu phẩy và khoảng trắng
+        }
+      }
+    } catch {
+      // Nếu không parse được JSON, fallback về xử lý chuỗi thông thường
+    }
+
+    // Fallback: nếu lưu dưới dạng mảng bị biến thành chuỗi như "1,Nội,Lào Cai"
+    const stripped = this.stripHtml(addressData);
+    if (stripped.includes(',')) {
+      return stripped.split(',').map(s => s.trim()).filter(s => s).join(', ');
+    }
+    return stripped;
   }
 
   toggleDropdown(id: number, event: Event) {
