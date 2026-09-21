@@ -13,20 +13,10 @@ namespace demo_dotnet.backend.Controllers;
 public class AdminController : ControllerBase
 {
     private readonly IAdminService _adminService;
-    private readonly IAuthService _authService;
 
-    public AdminController(IAdminService adminService, IAuthService authService)
+    public AdminController(IAdminService adminService)
     {
         _adminService = adminService;
-        _authService = authService;
-    }
-
-    [HttpPost]
-    [HasPermission("admin:create")]
-    public async Task<ActionResult<AdminResponse>> Create([FromBody] RegisterAdminRequest request)
-    {
-        var res = await _authService.RegisterAsync(request);
-        return StatusCode(StatusCodes.Status201Created, res);
     }
 
     [HttpGet]
