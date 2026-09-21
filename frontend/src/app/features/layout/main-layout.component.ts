@@ -133,7 +133,7 @@ import { ThemeService } from '../../core/services/theme.service';
             </a>
 
             <!-- Students Menu -->
-            <a routerLink="/students" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
+            <a *ngIf="authService.hasPermission('student:read')" routerLink="/students" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
                (click)="closeSidebarOnMobile()"
                class="text-gray-900 dark:text-slate-300 group flex items-center py-2 text-base font-medium rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 mt-1 transition-all duration-300 whitespace-nowrap"
                [ngClass]="isSidebarCollapsed ? 'px-0 md:justify-center' : 'px-2 justify-start'"
@@ -146,7 +146,7 @@ import { ThemeService } from '../../core/services/theme.service';
             </a>
 
             <!-- Parents Menu -->
-            <a routerLink="/parents" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
+            <a *ngIf="authService.hasPermission('parent:read')" routerLink="/parents" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
                (click)="closeSidebarOnMobile()"
                class="text-gray-900 dark:text-slate-300 group flex items-center py-2 text-base font-medium rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 mt-1 transition-all duration-300 whitespace-nowrap"
                [ngClass]="isSidebarCollapsed ? 'px-0 md:justify-center' : 'px-2 justify-start'"
@@ -156,6 +156,19 @@ import { ThemeService } from '../../core/services/theme.service';
                </svg>
                <span class="transition-all duration-300 block overflow-hidden"
                      [ngClass]="isSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-xs opacity-100 ml-3'">Phụ huynh</span>
+            </a>
+
+            <!-- Permissions Menu -->
+            <a *ngIf="authService.hasPermission('admin:read')" routerLink="/permissions" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
+               (click)="closeSidebarOnMobile()"
+               class="text-gray-900 dark:text-slate-300 group flex items-center py-2 text-base font-medium rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 mt-1 transition-all duration-300 whitespace-nowrap"
+               [ngClass]="isSidebarCollapsed ? 'px-0 md:justify-center' : 'px-2 justify-start'"
+               [title]="isSidebarCollapsed ? 'Phân quyền' : ''">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0 text-gray-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+               </svg>
+               <span class="transition-all duration-300 block overflow-hidden"
+                     [ngClass]="isSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-xs opacity-100 ml-3'">Phân quyền</span>
             </a>
           </nav>
         </aside>
@@ -179,7 +192,7 @@ import { ThemeService } from '../../core/services/theme.service';
   `
 })
 export class MainLayoutComponent implements OnInit {
-  private authService = inject(AuthService);
+  public authService = inject(AuthService);
   themeService = inject(ThemeService);
   currentUser = this.authService.getCurrentUser();
   avatarUrl = signal<string | null>(null);
@@ -236,3 +249,4 @@ export class MainLayoutComponent implements OnInit {
     this.authService.logout();
   }
 }
+

@@ -38,8 +38,8 @@ import { QuillModule } from 'ngx-quill';
                 class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
                 [ngClass]="{'border-red-500': submitted() && f['fullName'].errors}">
               <div *ngIf="submitted() && f['fullName'].errors" class="text-red-500 text-xs mt-1">
-                <p *ngIf="f['fullName'].errors?.['required']">Họ tên là bắt buộc</p>
-                <p *ngIf="f['fullName'].errors?.['pattern']">Họ tên không được chứa số và ký tự đặc biệt</p>
+                <p *ngIf="f['fullName'].errors['required']">Họ tên là bắt buộc</p>
+                <p *ngIf="f['fullName'].errors['pattern']">Họ tên không được chứa số và ký tự đặc biệt</p>
               </div>
             </div>
 
@@ -55,9 +55,9 @@ import { QuillModule } from 'ngx-quill';
                   [ngClass]="{'border-red-500': (submitted() || f['phoneNumber'].dirty) && f['phoneNumber'].errors}">
               </div>
               <div *ngIf="(submitted() || f['phoneNumber'].dirty) && f['phoneNumber'].errors" class="text-red-500 text-xs mt-1">
-                <p *ngIf="f['phoneNumber'].errors?.['required']">Số điện thoại là bắt buộc</p>
-                <p *ngIf="f['phoneNumber'].errors?.['pattern']">Số điện thoại không hợp lệ (Gồm 10 số, bắt đầu bằng 03,05,07,08,09)</p>
-                <p *ngIf="f['phoneNumber'].errors?.['serverError']" class="font-semibold">{{ f['phoneNumber'].errors?.['serverError'] }}</p>
+                <p *ngIf="f['phoneNumber'].errors['required']">Số điện thoại là bắt buộc</p>
+                <p *ngIf="f['phoneNumber'].errors['pattern']">Số điện thoại không hợp lệ (Gồm 10 số, bắt đầu bằng 03,05,07,08,09)</p>
+                <p *ngIf="f['phoneNumber'].errors['serverError']" class="font-semibold">{{ f['phoneNumber'].errors['serverError'] }}</p>
               </div>
             </div>
 
@@ -73,35 +73,36 @@ import { QuillModule } from 'ngx-quill';
                   [ngClass]="{'border-red-500': (submitted() || f['email'].dirty) && f['email'].errors}">
               </div>
               <div *ngIf="(submitted() || f['email'].dirty) && f['email'].errors" class="text-red-500 text-xs mt-1">
-                <p *ngIf="f['email'].errors?.['email']">Email không hợp lệ</p>
-                <p *ngIf="f['email'].errors?.['serverError']" class="font-semibold">{{ f['email'].errors?.['serverError'] }}</p>
+                <p *ngIf="f['email'].errors['email']">Email không hợp lệ</p>
+                <p *ngIf="f['email'].errors['serverError']" class="font-semibold">{{ f['email'].errors['serverError'] }}</p>
               </div>
             </div>
 
             <!-- Nghề nghiệp -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Nghề nghiệp</label>
-              <input type="text" formControlName="occupation" list="occupations"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
-                [ngClass]="{'border-red-500': submitted() && f['occupation'].errors}">
-              <datalist id="occupations">
-                <option value="Giáo viên"></option>
-                <option value="Bác sĩ"></option>
-                <option value="Kỹ sư"></option>
-                <option value="Kinh doanh"></option>
-                <option value="Nhân viên văn phòng"></option>
-                <option value="Nội trợ"></option>
-                <option value="Công nhân"></option>
-              </datalist>
+              <div class="flex flex-col gap-2">
+                <select formControlName="occupationSelect"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white bg-white dark:bg-slate-800">
+                  <option value="">-- Chọn nghề nghiệp --</option>
+                  <option *ngFor="let occ of predefinedOccupations" [value]="occ">{{occ}}</option>
+                  <option value="Khác">Khác (Nhập tay...)</option>
+                </select>
+
+                <input *ngIf="isCustomOccupation()" type="text" formControlName="occupation" placeholder="Nhập nghề nghiệp..."
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
+                  [ngClass]="{'border-red-500': submitted() && f['occupation'].errors}">
+              </div>
               <p *ngIf="submitted() && f['occupation'].errors?.['pattern']" class="text-red-500 text-xs mt-1">Nghề nghiệp không được chứa số và ký tự đặc biệt</p>
             </div>
 
             <!-- Địa chỉ -->
             <div class="md:col-span-2 mb-8">
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Địa chỉ</label>
-              <div class="bg-white dark:bg-slate-800 rounded-md">
-                <quill-editor formControlName="address" 
-                  [styles]="{height: '150px'}" 
+              <div class="bg-white dark:bg-slate-800 rounded-md w-full">
+                <quill-editor formControlName="address"
+                  [styles]="{height: '150px', display: 'block', width: '100%'}"
+                  class="w-full"
                   placeholder="Nhập địa chỉ chi tiết (số nhà, phường/xã, quận/huyện...)"
                   theme="snow">
                 </quill-editor>
@@ -142,6 +143,9 @@ export class ParentFormComponent implements OnInit {
   submitted = signal(false);
   serverError = signal<string | null>(null);
 
+  predefinedOccupations = ['Giáo viên', 'Bác sĩ', 'Kỹ sư', 'Kinh doanh', 'Nhân viên văn phòng', 'Nội trợ', 'Công nhân'];
+  isCustomOccupation = signal(false);
+
   parentForm: FormGroup = this.fb.group({
     fullName: ['', [Validators.required, Validators.pattern(/^[a-zA-ZÀ-ỹ\s]*[a-zA-ZÀ-ỹ][a-zA-ZÀ-ỹ\s]*$/)]],
     phoneNumber: ['', [
@@ -149,6 +153,7 @@ export class ParentFormComponent implements OnInit {
       Validators.pattern(/^(0[3|5|7|8|9])+([0-9]{8})$/)
     ]],
     email: ['', [Validators.email]],
+    occupationSelect: [''],
     occupation: ['', [Validators.pattern(/^[a-zA-ZÀ-ỹ\s]*$/)]],
     address: ['']
   });
@@ -156,6 +161,18 @@ export class ParentFormComponent implements OnInit {
   get f() { return this.parentForm.controls; }
 
   ngOnInit() {
+    this.parentForm.get('occupationSelect')?.valueChanges.subscribe(val => {
+      if (val === 'Khác') {
+        this.isCustomOccupation.set(true);
+        if (this.parentForm.get('occupation')?.value === 'Khác') {
+          this.parentForm.get('occupation')?.setValue('');
+        }
+      } else {
+        this.isCustomOccupation.set(false);
+        this.parentForm.get('occupation')?.setValue(val);
+      }
+    });
+
     this.checkEditMode();
   }
 
@@ -179,6 +196,14 @@ export class ParentFormComponent implements OnInit {
     this.parentService.getParentById(id).subscribe({
       next: (parent) => {
         if (parent) {
+          if (parent.occupation) {
+            if (!this.predefinedOccupations.includes(parent.occupation)) {
+              this.isCustomOccupation.set(true);
+              (parent as any).occupationSelect = 'Khác';
+            } else {
+              (parent as any).occupationSelect = parent.occupation;
+            }
+          }
           this.parentForm.patchValue(parent);
         }
         this.isLoading.set(false);
@@ -193,6 +218,11 @@ export class ParentFormComponent implements OnInit {
   onSubmit() {
     this.submitted.set(true);
     this.serverError.set(null);
+
+    if (this.parentForm.get('occupationSelect')?.value === 'Khác' && !this.parentForm.get('occupation')?.value) {
+      // Allow empty custom occupation if it's optional, but we just want to submit it.
+    }
+
     if (this.parentForm.invalid) return;
 
     this.isLoading.set(true);
@@ -205,6 +235,7 @@ export class ParentFormComponent implements OnInit {
       occupation: rawData.occupation?.trim(),
       address: rawData.address?.trim()
     };
+    delete data.occupationSelect;
 
     const id = this.parentId || Number(this.route.snapshot.paramMap.get('id'));
 

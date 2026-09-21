@@ -13,10 +13,20 @@ namespace demo_dotnet.backend.Controllers;
 public class AdminController : ControllerBase
 {
     private readonly IAdminService _adminService;
+    private readonly IAuthService _authService;
 
-    public AdminController(IAdminService adminService)
+    public AdminController(IAdminService adminService, IAuthService authService)
     {
         _adminService = adminService;
+        _authService = authService;
+    }
+
+    [HttpPost]
+    [HasPermission("admin:create")]
+    public async Task<ActionResult<AdminResponse>> Create([FromBody] RegisterAdminRequest request)
+    {
+        var res = await _authService.RegisterAsync(request);
+        return StatusCode(StatusCodes.Status201Created, res);
     }
 
     [HttpGet]
@@ -55,7 +65,7 @@ public class AdminController : ControllerBase
     [HasPermission("admin_permission:assign")]
     public async Task<IActionResult> SyncPermissions([FromRoute] int id, [FromBody] AssignPermissionsRequest request)
     {
-        await _adminService.SyncPermissionsAsync(id, request.PermissionIds);
+        await _adminService.SyncPermissionsAsync(id, request.PermissionCodes);
         return Ok(new { message = $"Đồng bộ danh sách quyền cho Admin ID {id} thành công." });
     }
 }

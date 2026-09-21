@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { StudentService } from '../../core/services/student.service';
 import { Student } from '../../core/models/student.model';
 import { QuillModule } from 'ngx-quill';
+import { SCHOOL_CLASSES } from '../../core/constants/app.constants';
 
 @Component({
   selector: 'app-student-form',
@@ -40,9 +41,9 @@ import { QuillModule } from 'ngx-quill';
                 class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white uppercase"
                 [ngClass]="{'border-red-500': (submitted() || f['studentCode'].dirty) && f['studentCode'].errors}">
               <div *ngIf="(submitted() || f['studentCode'].dirty) && f['studentCode'].errors" class="text-red-500 text-xs mt-1">
-                <p *ngIf="f['studentCode'].errors?.['required']">Mã học sinh là bắt buộc</p>
-                <p *ngIf="f['studentCode'].errors?.['pattern']">Mã học sinh chỉ chứa chữ và số</p>
-                <p *ngIf="f['studentCode'].errors?.['serverError']" class="font-semibold">{{ f['studentCode'].errors?.['serverError'] }}</p>
+                <p *ngIf="f['studentCode'].errors['required']">Mã học sinh là bắt buộc</p>
+                <p *ngIf="f['studentCode'].errors['pattern']">Mã học sinh chỉ chứa chữ và số</p>
+                <p *ngIf="f['studentCode'].errors['serverError']" class="font-semibold">{{ f['studentCode'].errors['serverError'] }}</p>
               </div>
             </div>
 
@@ -53,28 +54,31 @@ import { QuillModule } from 'ngx-quill';
                 class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
                 [ngClass]="{'border-red-500': submitted() && f['fullName'].errors}">
               <div *ngIf="submitted() && f['fullName'].errors" class="text-red-500 text-xs mt-1">
-                <p *ngIf="f['fullName'].errors?.['required']">Họ tên là bắt buộc</p>
-                <p *ngIf="f['fullName'].errors?.['pattern']">Họ tên không được chứa số và ký tự đặc biệt</p>
+                <p *ngIf="f['fullName'].errors['required']">Họ tên là bắt buộc</p>
+                <p *ngIf="f['fullName'].errors['pattern']">Họ tên không được chứa số và ký tự đặc biệt</p>
               </div>
             </div>
 
-            <!-- Lớp -->
+            <!-- Khối và Lớp -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Lớp <span class="text-red-500">*</span></label>
-              <input type="text" formControlName="className" list="classNames"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white uppercase"
-                [ngClass]="{'border-red-500': submitted() && f['className'].errors}">
-              <datalist id="classNames">
-                <option value="10A1"></option>
-                <option value="10A2"></option>
-                <option value="11A1"></option>
-                <option value="11A2"></option>
-                <option value="12A1"></option>
-                <option value="12A2"></option>
-              </datalist>
+              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Lớp học <span class="text-red-500">*</span></label>
+              <div class="grid grid-cols-2 gap-3">
+                <select formControlName="grade"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white bg-white dark:bg-slate-800">
+                  <option value="">- Khối -</option>
+                  <option *ngFor="let g of grades" [value]="g">{{g}}</option>
+                </select>
+
+                <select formControlName="className"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white bg-white dark:bg-slate-800"
+                  [ngClass]="{'border-red-500': submitted() && f['className'].errors}">
+                  <option value="">- Lớp -</option>
+                  <option *ngFor="let c of availableClasses()" [value]="c">{{c}}</option>
+                </select>
+              </div>
               <div *ngIf="submitted() && f['className'].errors" class="text-red-500 text-xs mt-1">
-                <p *ngIf="f['className'].errors?.['required']">Lớp học là bắt buộc</p>
-                <p *ngIf="f['className'].errors?.['pattern']">Tên lớp không được chứa ký tự đặc biệt</p>
+                <p *ngIf="f['className'].errors['required']">Lớp học là bắt buộc</p>
+                <p *ngIf="f['className'].errors['pattern']">Tên lớp không hợp lệ</p>
               </div>
             </div>
 
@@ -87,8 +91,8 @@ import { QuillModule } from 'ngx-quill';
                   [ngClass]="{'border-red-500': submitted() && f['dateOfBirth'].errors}">
               </div>
               <div *ngIf="submitted() && f['dateOfBirth'].errors" class="text-red-500 text-xs mt-1">
-                <p *ngIf="f['dateOfBirth'].errors?.['required']">Ngày sinh là bắt buộc</p>
-                <p *ngIf="f['dateOfBirth'].errors?.['pattern']">Năm sinh không hợp lệ (nhập từ 1900 đến 2099)</p>
+                <p *ngIf="f['dateOfBirth'].errors['required']">Ngày sinh là bắt buộc</p>
+                <p *ngIf="f['dateOfBirth'].errors['pattern']">Năm sinh không hợp lệ (nhập từ 1900 đến 2099)</p>
               </div>
             </div>
 
@@ -110,9 +114,10 @@ import { QuillModule } from 'ngx-quill';
             <!-- Địa chỉ -->
             <div class="md:col-span-2 mb-8">
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Địa chỉ</label>
-              <div class="bg-white dark:bg-slate-800 rounded-md">
-                <quill-editor formControlName="address" 
-                  [styles]="{height: '150px'}" 
+              <div class="bg-white dark:bg-slate-800 rounded-md w-full">
+                <quill-editor formControlName="address"
+                  [styles]="{height: '150px', display: 'block', width: '100%'}"
+                  class="w-full"
                   placeholder="Nhập địa chỉ chi tiết (số nhà, phường/xã, quận/huyện...)"
                   theme="snow">
                 </quill-editor>
@@ -157,8 +162,27 @@ export class StudentFormComponent implements OnInit {
   submitted = signal(false);
   serverError = signal<string | null>(null);
 
+  schoolClasses = SCHOOL_CLASSES;
+  grades = Object.keys(SCHOOL_CLASSES);
+  availableClasses = signal<string[]>([]);
+
   ngOnInit() {
     this.initForm();
+
+    // Watch grade changes
+    this.studentForm.get('grade')?.valueChanges.subscribe(grade => {
+      if (grade) {
+        this.availableClasses.set(this.schoolClasses[grade] || []);
+      } else {
+        this.availableClasses.set([]);
+      }
+
+      const currentClass = this.studentForm.get('className')?.value;
+      if (grade && !this.schoolClasses[grade].includes(currentClass)) {
+        this.studentForm.get('className')?.setValue('');
+      }
+    });
+
     this.checkEditMode();
   }
 
@@ -168,6 +192,7 @@ export class StudentFormComponent implements OnInit {
       fullName: ['', [Validators.required, Validators.pattern(/^[a-zA-ZÀ-ỹ\s]*[a-zA-ZÀ-ỹ][a-zA-ZÀ-ỹ\s]*$/)]],
       dateOfBirth: ['', [Validators.required, Validators.pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/)]],
       gender: ['Male', Validators.required],
+      grade: [''],
       className: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9\s]*$/)]],
       address: ['']
     });
@@ -198,7 +223,17 @@ export class StudentFormComponent implements OnInit {
           if (student.dateOfBirth) {
             student.dateOfBirth = student.dateOfBirth.split('T')[0];
           }
-          this.studentForm.patchValue(student);
+
+          let foundGrade = '';
+          for (const [grade, classes] of Object.entries(this.schoolClasses)) {
+            if (classes.includes(student.className)) {
+              foundGrade = grade;
+              break;
+            }
+          }
+
+          const patchData = { ...student, grade: foundGrade };
+          this.studentForm.patchValue(patchData);
         }
         this.isLoading.set(false);
       },
@@ -223,6 +258,7 @@ export class StudentFormComponent implements OnInit {
       className: rawData.className?.trim(),
       address: rawData.address?.trim()
     };
+    delete data.grade;
 
     const id = this.studentId || Number(this.route.snapshot.paramMap.get('id'));
 
