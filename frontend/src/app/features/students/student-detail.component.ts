@@ -6,6 +6,8 @@ import { StudentService } from '../../core/services/student.service';
 import { Student } from '../../core/models/student.model';
 import { Parent } from '../../core/models/parent.model';
 import { ParentService } from '../../core/services/parent.service';
+import { AuthService } from '../../core/auth/auth.service';
+import { ToastService } from '../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-student-detail',
@@ -170,6 +172,8 @@ export class StudentDetailComponent implements OnInit {
   private studentService = inject(StudentService);
   private parentService = inject(ParentService);
   private location = inject(Location);
+  public authService = inject(AuthService);
+  private toastService = inject(ToastService);
 
   student = signal<Student | null>(null);
 
@@ -197,16 +201,33 @@ export class StudentDetailComponent implements OnInit {
 
   loadData(studentId: number) {
     this.isLoading.set(true);
-    this.studentService.getStudentById(studentId).subscribe(s => {
-      this.student.set(s);
+    this.studentService.getStudentById(studentId).subscribe({
+      next: (s) => {
+        this.student.set(s);
 
-      this.parentService.getAllParents().subscribe(parents => {
-        const linkedIds = s.parents?.map(p => p.id) || [];
-        const unlinked = parents.filter(p => !linkedIds.includes(p.id));
-        this.availableParents.set(unlinked);
-        this.filteredParents.set(unlinked);
+        if (this.authService.hasPermission('parent:read')) {
+          this.parentService.getAllParents().subscribe({
+            next: (parents) => {
+              const linkedIds = s.parents?.map(p => p.id) || [];
+              const unlinked = parents.filter(p => !linkedIds.includes(p.id));
+              this.availableParents.set(unlinked);
+              this.filteredParents.set(unlinked);
+              this.isLoading.set(false);
+            },
+            error: (err) => {
+              console.error('Failed to load parents:', err);
+              this.isLoading.set(false);
+            }
+          });
+        } else {
+          this.isLoading.set(false);
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load student:', err);
+        this.toastService.error('Không thể tải thông tin học sinh.');
         this.isLoading.set(false);
-      });
+      }
     });
   }
 
@@ -260,7 +281,7 @@ export class StudentDetailComponent implements OnInit {
         },
         error: (err) => {
           this.isLinking.set(false);
-          alert('Có lỗi xảy ra khi gán phụ huynh: ' + (err.error?.message || err.message));
+          this.toastService.error('Có lỗi xảy ra khi gán phụ huynh: ' + (err.error?.message || err.message));
         }
       });
   }

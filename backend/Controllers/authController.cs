@@ -25,13 +25,6 @@ public class AuthController : ControllerBase
         return Ok(res);
     }
 
-    [HttpPost("register")]
-    public async Task<ActionResult<AdminResponse>> Register([FromBody] RegisterAdminRequest request)
-    {
-        var res = await _authService.RegisterAsync(request);
-        return StatusCode(StatusCodes.Status201Created, res);
-    }
-
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     {

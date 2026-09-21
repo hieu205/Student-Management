@@ -24,7 +24,7 @@ export class ParentService {
     let params = new HttpParams();
     if (search) params = params.set('search', search);
 
-    return this.http.get<Parent[]>(`${this.BASE_URL}/parent`, { params }).pipe(
+    return this.http.get<Parent[]>(this.BASE_URL, { params }).pipe(
       map(list => {
         // Sắp xếp phía client nếu cần
         if (sortBy) {
@@ -51,11 +51,11 @@ export class ParentService {
 
   // Dùng để đổ vào dropdown khi gán phụ huynh cho học sinh
   getAllParents(): Observable<Parent[]> {
-    return this.http.get<Parent[]>(`${this.BASE_URL}/parent`);
+    return this.http.get<Parent[]>(this.BASE_URL);
   }
 
   getParentById(id: number): Observable<Parent> {
-    return this.http.get<Parent>(`${this.BASE_URL}/parent/${id}`);
+    return this.http.get<Parent>(`${this.BASE_URL}/${id}`);
   }
 
   createParent(data: Omit<Parent, 'id'>): Observable<Parent> {
@@ -66,7 +66,7 @@ export class ParentService {
       occupation: data.occupation || undefined,
       address: data.address || undefined
     };
-    return this.http.post<Parent>(`${this.BASE_URL}/parent`, body);
+    return this.http.post<Parent>(this.BASE_URL, body);
   }
 
   updateParent(id: number, data: Partial<Parent>): Observable<Parent> {
@@ -77,11 +77,11 @@ export class ParentService {
       occupation: data.occupation || undefined,
       address: data.address || undefined
     };
-    return this.http.put<Parent>(`${this.BASE_URL}/parent/${id}`, body);
+    return this.http.put<Parent>(`${this.BASE_URL}/${id}`, body);
   }
 
   deleteParent(id: number): Observable<boolean> {
-    return this.http.delete(`${this.BASE_URL}/parent/${id}`).pipe(
+    return this.http.delete(`${this.BASE_URL}/${id}`).pipe(
       map(() => true)
     );
   }

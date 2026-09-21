@@ -114,6 +114,15 @@ public class AuthService : IAuthService
             throw new ConflictException("Tài khoản đã tồn tại");
         }
 
+        if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            var existingEmail = await _adminRepository.GetByEmailAsync(request.Email);
+            if (existingEmail != null)
+            {
+                throw new ConflictException("Email này đã được sử dụng bởi tài khoản khác");
+            }
+        }
+
         var admin = new Admin
         {
             Username = request.Username.Trim(),

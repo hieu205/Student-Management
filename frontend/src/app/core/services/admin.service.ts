@@ -35,58 +35,19 @@ export class AdminService {
     return this.http.put<AdminResponse>(`${this.BASE_URL}/${id}`, request);
   }
 
-  // --- MOCK ENDPOINTS FOR RBAC (BE hasn't implemented these yet) ---
   getAllAdmins(): Observable<AdminResponse[]> {
-    // Temporary mock data until BE is ready
-    return of([
-      {
-        id: 1,
-        username: 'admin_tong',
-        fullName: 'Super Admin',
-        email: 'super@admin.com',
-        createdAt: new Date().toISOString(),
-        permissions: [
-          'student:read', 'student:create', 'student:update', 'student:delete',
-          'parent:read', 'parent:create', 'parent:update', 'parent:delete',
-          'student_parent:assign', 'student_parent:remove',
-          'admin:read', 'admin:create', 'admin:update', 'admin:delete',
-          'role:read', 'role:manage', 'admin_permission:assign'
-        ] // All 17 permissions
-      },
-      {
-        id: 2,
-        username: 'admin_con1',
-        fullName: 'Trần Văn Phụ',
-        email: 'phu@admin.com',
-        createdAt: new Date().toISOString(),
-        permissions: ['student:read', 'parent:read', 'student_parent:assign']
-      },
-      {
-        id: 3,
-        username: 'admin_con2',
-        fullName: 'Lê Học Sinh',
-        email: 'hs@admin.com',
-        createdAt: new Date().toISOString(),
-        permissions: ['student:read', 'student:create']
-      },
-    ]);
+    return this.http.get<AdminResponse[]>(this.BASE_URL);
   }
 
   updateAdminPermissions(id: number, permissions: string[]): Observable<any> {
-    // Fake success response
-    return of({ success: true, permissions });
+    return this.http.put(`${this.BASE_URL}/${id}/permissions`, { permissionCodes: permissions });
   }
 
   addAdmin(data: any): Observable<AdminResponse> {
-    const newAdmin: AdminResponse = {
-      id: Math.floor(Math.random() * 1000) + 10,
-      username: data.username,
-      fullName: data.fullName,
-      email: data.email,
-      createdAt: new Date().toISOString(),
-      permissions: []
-    };
-    return of(newAdmin);
+    return this.http.post<AdminResponse>(this.BASE_URL, data);
+  }
+
+  deleteAdmin(id: number): Observable<any> {
+    return this.http.delete(`${this.BASE_URL}/${id}`);
   }
 }
-

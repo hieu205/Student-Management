@@ -133,7 +133,7 @@ import { ThemeService } from '../../core/services/theme.service';
             </a>
 
             <!-- Students Menu -->
-            <a routerLink="/students" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
+            <a *ngIf="authService.hasPermission('student:read')" routerLink="/students" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
                (click)="closeSidebarOnMobile()"
                class="text-gray-900 dark:text-slate-300 group flex items-center py-2 text-base font-medium rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 mt-1 transition-all duration-300 whitespace-nowrap"
                [ngClass]="isSidebarCollapsed ? 'px-0 md:justify-center' : 'px-2 justify-start'"
@@ -146,7 +146,7 @@ import { ThemeService } from '../../core/services/theme.service';
             </a>
 
             <!-- Parents Menu -->
-            <a routerLink="/parents" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
+            <a *ngIf="authService.hasPermission('parent:read')" routerLink="/parents" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
                (click)="closeSidebarOnMobile()"
                class="text-gray-900 dark:text-slate-300 group flex items-center py-2 text-base font-medium rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 mt-1 transition-all duration-300 whitespace-nowrap"
                [ngClass]="isSidebarCollapsed ? 'px-0 md:justify-center' : 'px-2 justify-start'"
@@ -159,7 +159,7 @@ import { ThemeService } from '../../core/services/theme.service';
             </a>
 
             <!-- Permissions Menu -->
-            <a routerLink="/permissions" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
+            <a *ngIf="authService.hasPermission('admin:read')" routerLink="/permissions" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
                (click)="closeSidebarOnMobile()"
                class="text-gray-900 dark:text-slate-300 group flex items-center py-2 text-base font-medium rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 mt-1 transition-all duration-300 whitespace-nowrap"
                [ngClass]="isSidebarCollapsed ? 'px-0 md:justify-center' : 'px-2 justify-start'"
@@ -192,7 +192,7 @@ import { ThemeService } from '../../core/services/theme.service';
   `
 })
 export class MainLayoutComponent implements OnInit {
-  private authService = inject(AuthService);
+  public authService = inject(AuthService);
   themeService = inject(ThemeService);
   currentUser = this.authService.getCurrentUser();
   avatarUrl = signal<string | null>(null);

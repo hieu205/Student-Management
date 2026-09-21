@@ -11,6 +11,8 @@ export interface LoginResponse {
     username: string;
     fullName: string;
     email: string;
+    roles: string[];
+    permissions: string[];
   };
 }
 
@@ -24,7 +26,7 @@ export class AuthService {
   private readonly BASE_URL = 'http://localhost:5075/api/v1/auth';
 
   login(credentials: { username: string; password: string }): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.BASE_URL}/auth/login`, credentials);
+    return this.http.post<LoginResponse>(`${this.BASE_URL}/login`, credentials);
   }
 
   // --- Các hàm tiện ích quản lý Token ---
@@ -44,6 +46,11 @@ export class AuthService {
   getCurrentUser(): any {
     const userStr = localStorage.getItem('current_user');
     return userStr ? JSON.parse(userStr) : null;
+  }
+
+  hasPermission(code: string): boolean {
+    const user = this.getCurrentUser();
+    return user?.permissions?.includes(code) ?? false;
   }
 
   isLoggedIn(): boolean {

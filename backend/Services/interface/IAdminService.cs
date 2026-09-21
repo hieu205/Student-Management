@@ -10,6 +10,5 @@ public interface IAdminService
     Task<AdminResponse> UpdateAdmin(int id, AdminRequest request);
     Task DeleteAdmin(int id);
 
-    Task SyncPermissionsAsync(int adminId, List<int> targetPermissionIds);
-
+    Task SyncPermissionsAsync(int adminId, List<string> targetPermissionCodes);
 }
