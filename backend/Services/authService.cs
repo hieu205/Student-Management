@@ -171,7 +171,10 @@ public class AuthService : IAuthService
     {
         var admin = await _adminRepository.GetByEmailAsync(request.Email.Trim());
 
-        if (admin == null) return;
+        if (admin == null) 
+        {
+            throw new NotFoundException("Email không tồn tại trên hệ thống.");
+        }
 
         var resetToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 

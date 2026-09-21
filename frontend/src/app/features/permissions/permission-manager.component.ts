@@ -21,145 +21,160 @@ interface PermissionGroup {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-6">
+    <div class="max-w-7xl mx-auto flex flex-col gap-6">
 
-      <!-- Left Column: User List -->
-      <div class="w-full md:w-1/3 flex flex-col bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden h-[calc(100vh-8rem)]">
-        <div class="p-4 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900">
-          <div class="flex justify-between items-center">
-            <h2 class="text-lg font-bold text-gray-800 dark:text-slate-100">Tài khoản Admin</h2>
-            <button *ngIf="authService.hasPermission('admin:create')" (click)="openAddModal()" class="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors shadow-sm">
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-              Thêm mới
-            </button>
-          </div>
-          <div class="mt-3 relative">
-            <input type="text" [(ngModel)]="searchQuery" (input)="onSearchChange()" placeholder="Tìm kiếm theo tên, email..."
-                   class="w-full pl-9 pr-4 py-2 border border-gray-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-gray-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-400">
-            <svg class="w-4 h-4 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-          </div>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
-          <!-- Loading skeleton -->
-          <div *ngIf="isLoading()" class="space-y-3">
-            <div *ngFor="let i of [1,2,3,4]" class="animate-pulse flex items-center p-3 gap-3 border border-gray-50 dark:border-slate-700/50 rounded-xl">
-              <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-slate-700 shrink-0"></div>
-              <div class="flex-1 space-y-2 py-1">
-                <div class="h-4 bg-gray-200 dark:bg-slate-700 rounded w-3/4"></div>
-                <div class="h-3 bg-gray-200 dark:bg-slate-700 rounded w-1/2"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Empty state -->
-          <div *ngIf="!isLoading() && filteredUsers().length === 0" class="text-center py-10 px-4">
-            <div class="w-16 h-16 rounded-full bg-gray-50 dark:bg-slate-700/50 flex items-center justify-center mx-auto mb-3">
-              <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-            </div>
-            <p class="text-gray-500 dark:text-slate-400 text-sm">Không tìm thấy tài khoản nào</p>
-          </div>
-
-          <!-- User list -->
-          <div *ngFor="let user of filteredUsers()"
-               (click)="selectUser(user)"
-               class="p-4 border border-gray-100 dark:border-slate-700 rounded-xl cursor-pointer transition-all hover:shadow-sm"
-               [ngClass]="selectedUser()?.id === user.id ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-slate-700'">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
-                {{ user.fullName.charAt(0) || 'U' }}
-              </div>
-              <div class="overflow-hidden flex-1">
-                <h3 class="font-semibold text-gray-800 dark:text-slate-200 truncate flex items-center justify-between"
-                    [ngClass]="{'text-blue-700 dark:text-blue-400': selectedUser()?.id === user.id}">
-                  {{ user.fullName }}
-                  <span *ngIf="user.permissions && user.permissions.length > 0" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">{{ user.permissions.length }} quyền</span>
-                </h3>
-                <p class="text-xs text-gray-500 dark:text-slate-400 truncate">{{ user.email }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Column: Checkbox Groups -->
-      <div class="w-full md:w-2/3 flex flex-col bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden h-auto md:h-[calc(100vh-8rem)]">
-
-        <div *ngIf="!selectedUser()" class="flex-1 flex flex-col items-center justify-center p-8 text-gray-400 dark:text-slate-500">
-          <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-          <p class="text-lg">Chưa chọn tài khoản nào</p>
-          <p class="text-sm mt-1">Vui lòng chọn hoặc tìm kiếm một tài khoản bên trái.</p>
-        </div>
-
-        <ng-container *ngIf="selectedUser()">
-          <div class="p-6 border-b border-gray-100 dark:border-slate-700 flex items-start gap-4 bg-gray-50/50 dark:bg-slate-900/50 shrink-0">
-            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-2xl shadow-md shrink-0">
-              {{ selectedUser()!.fullName.charAt(0) || 'U' }}
-            </div>
-            <div class="flex-1">
-              <h2 class="text-2xl font-bold text-gray-800 dark:text-slate-100 flex items-center gap-3">
-                {{ selectedUser()!.fullName }}
-                <button *ngIf="authService.hasPermission('admin:update')" (click)="openEditModal()" class="text-gray-400 hover:text-orange-500 transition-colors" title="Sửa thông tin">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                </button>
-                <button *ngIf="authService.hasPermission('admin:delete') && !isSelectedUserSuperAdmin && !isViewingSelf"
-                        (click)="openDeleteConfirm()" class="text-gray-400 hover:text-red-500 transition-colors" title="Xóa tài khoản">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </button>
-              </h2>
-              <p class="text-gray-500 dark:text-slate-400 mt-1">Username: <span class="font-medium text-gray-700 dark:text-slate-300">{{ selectedUser()!.username }}</span></p>
-            </div>
-            <div *ngIf="authService.hasPermission('admin_permission:assign')" class="text-right flex gap-2">
-               <button (click)="selectAllPermissions()" class="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50 dark:text-blue-400 font-medium transition-colors">
-                Chọn tất cả
-              </button>
-              <button (click)="deselectAllPermissions()" class="px-3 py-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg text-sm text-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700 dark:text-gray-300 font-medium transition-colors">
-                Bỏ chọn tất cả
+      <div *ngIf="authService.hasPermission('admin:read')" class="flex flex-col md:flex-row gap-6 w-full">
+        <!-- Left Column: User List -->
+        <div class="w-full md:w-1/3 flex flex-col bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden h-[calc(100vh-8rem)]">
+          <div class="p-4 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900">
+            <div class="flex justify-between items-center">
+              <h2 class="text-lg font-bold text-gray-800 dark:text-slate-100">Tài khoản Admin</h2>
+              <button *ngIf="authService.hasPermission('admin:create')" (click)="openAddModal()" class="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Thêm mới
               </button>
             </div>
+            <div class="mt-3 relative">
+              <input type="text" [(ngModel)]="searchQuery" (input)="onSearchChange()" placeholder="Tìm kiếm theo tên, email..."
+                     class="w-full pl-9 pr-4 py-2 border border-gray-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-gray-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-400">
+              <svg class="w-4 h-4 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
           </div>
 
-          <!-- Permissions Checkboxes -->
-          <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar bg-gray-50/30 dark:bg-slate-900/30">
-            <div *ngFor="let group of groups">
-              <h3 class="font-bold text-gray-800 dark:text-slate-200 mb-4 pb-2 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2 text-lg">
-                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                {{ group.name }}
-              </h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div *ngFor="let item of group.items" class="flex items-start bg-white dark:bg-slate-800 p-3 rounded-lg border border-gray-100 dark:border-slate-700 shadow-sm transition-all hover:border-blue-300 dark:hover:border-blue-700"
-                     [ngClass]="{'border-blue-400 bg-blue-50/50 dark:bg-blue-900/10 dark:border-blue-600': hasPermission(item.code)}">
-                  <div class="flex items-center h-5">
-                    <input type="checkbox"
-                           [id]="item.code"
-                           [checked]="hasPermission(item.code)"
-                           (change)="togglePermission(item)"
-                           [disabled]="!authService.hasPermission('admin_permission:assign')"
-                           class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                           [class.cursor-pointer]="authService.hasPermission('admin_permission:assign')"
-                           [class.cursor-not-allowed]="!authService.hasPermission('admin_permission:assign')">
-                  </div>
-                  <div class="ml-3 text-sm flex-1">
-                    <label [for]="item.code" class="font-medium text-gray-800 dark:text-slate-200 cursor-pointer block select-none">
-                      {{ item.label }}
-                    </label>
-                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1 font-mono">{{ item.code }}</p>
-                  </div>
+          <div class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+            <!-- Loading skeleton -->
+            <div *ngIf="isLoading()" class="space-y-3">
+              <div *ngFor="let i of [1,2,3,4]" class="animate-pulse flex items-center p-3 gap-3 border border-gray-50 dark:border-slate-700/50 rounded-xl">
+                <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-slate-700 shrink-0"></div>
+                <div class="flex-1 space-y-2 py-1">
+                  <div class="h-4 bg-gray-200 dark:bg-slate-700 rounded w-3/4"></div>
+                  <div class="h-3 bg-gray-200 dark:bg-slate-700 rounded w-1/2"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty state -->
+            <div *ngIf="!isLoading() && filteredUsers().length === 0" class="text-center py-10 px-4">
+              <div class="w-16 h-16 rounded-full bg-gray-50 dark:bg-slate-700/50 flex items-center justify-center mx-auto mb-3">
+                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+              </div>
+              <p class="text-gray-500 dark:text-slate-400 text-sm">Không tìm thấy tài khoản nào</p>
+            </div>
+
+            <!-- User list -->
+            <div *ngFor="let user of filteredUsers()"
+                 (click)="selectUser(user)"
+                 class="p-4 border border-gray-100 dark:border-slate-700 rounded-xl cursor-pointer transition-all hover:shadow-sm"
+                 [ngClass]="selectedUser()?.id === user.id ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-slate-700'">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
+                  {{ user.fullName.charAt(0) || 'U' }}
+                </div>
+                <div class="overflow-hidden flex-1">
+                  <h3 class="font-semibold text-gray-800 dark:text-slate-200 truncate flex items-center justify-between"
+                      [ngClass]="{'text-blue-700 dark:text-blue-400': selectedUser()?.id === user.id}">
+                    {{ user.fullName }}
+                    <span *ngIf="user.permissions && user.permissions.length > 0" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">{{ user.permissions.length }} quyền</span>
+                  </h3>
+                  <p class="text-xs text-gray-500 dark:text-slate-400 truncate">{{ user.email }}</p>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <div *ngIf="authService.hasPermission('admin_permission:assign')" class="p-4 border-t border-gray-100 dark:border-slate-700 flex justify-end gap-3 bg-white dark:bg-slate-800 shrink-0">
-            <button (click)="savePermissions()" [disabled]="isSaving()"
-                    class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 flex items-center">
-              <svg *ngIf="isSaving()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-              Lưu thay đổi
-            </button>
+        <!-- Right Column: Checkbox Groups -->
+        <div class="w-full md:w-2/3 flex flex-col bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden h-auto md:h-[calc(100vh-8rem)]">
+
+          <div *ngIf="!selectedUser()" class="flex-1 flex flex-col items-center justify-center p-8 text-gray-400 dark:text-slate-500">
+            <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <p class="text-lg">Chưa chọn tài khoản nào</p>
+            <p class="text-sm mt-1">Vui lòng chọn hoặc tìm kiếm một tài khoản bên trái.</p>
           </div>
-        </ng-container>
+
+          <ng-container *ngIf="selectedUser()">
+            <div class="p-6 border-b border-gray-100 dark:border-slate-700 flex items-start gap-4 bg-gray-50/50 dark:bg-slate-900/50 shrink-0">
+              <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-2xl shadow-md shrink-0">
+                {{ selectedUser()!.fullName.charAt(0) || 'U' }}
+              </div>
+              <div class="flex-1">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-slate-100 flex items-center gap-3">
+                  {{ selectedUser()!.fullName }}
+                  <button *ngIf="authService.hasPermission('admin:update')" (click)="openEditModal()" class="text-gray-400 hover:text-orange-500 transition-colors" title="Sửa thông tin">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                  </button>
+                  <button *ngIf="authService.hasPermission('admin:delete') && !isSelectedUserSuperAdmin && !isViewingSelf"
+                          (click)="openDeleteConfirm()" class="text-gray-400 hover:text-red-500 transition-colors" title="Xóa tài khoản">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  </button>
+                </h2>
+                <p class="text-gray-500 dark:text-slate-400 mt-1">Username: <span class="font-medium text-gray-700 dark:text-slate-300">{{ selectedUser()!.username }}</span></p>
+              </div>
+              <div *ngIf="authService.hasPermission('admin_permission:assign')" class="text-right flex gap-2">
+                 <button (click)="selectAllPermissions()" class="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50 dark:text-blue-400 font-medium transition-colors">
+                  Chọn tất cả
+                </button>
+                <button (click)="deselectAllPermissions()" class="px-3 py-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg text-sm text-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700 dark:text-gray-300 font-medium transition-colors">
+                  Bỏ chọn tất cả
+                </button>
+              </div>
+            </div>
+
+            <!-- Permissions Checkboxes -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar bg-gray-50/30 dark:bg-slate-900/30">
+              <div *ngFor="let group of groups">
+                <h3 class="font-bold text-gray-800 dark:text-slate-200 mb-4 pb-2 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2 text-lg">
+                  <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                  {{ group.name }}
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div *ngFor="let item of group.items" class="flex items-start bg-white dark:bg-slate-800 p-3 rounded-lg border border-gray-100 dark:border-slate-700 shadow-sm transition-all hover:border-blue-300 dark:hover:border-blue-700"
+                       [ngClass]="{'border-blue-400 bg-blue-50/50 dark:bg-blue-900/10 dark:border-blue-600': hasPermission(item.code)}">
+                    <div class="flex items-center h-5">
+                      <input type="checkbox"
+                             [id]="item.code"
+                             [checked]="hasPermission(item.code)"
+                             (change)="togglePermission(item)"
+                             [disabled]="!authService.hasPermission('admin_permission:assign')"
+                             class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                             [class.cursor-pointer]="authService.hasPermission('admin_permission:assign')"
+                             [class.cursor-not-allowed]="!authService.hasPermission('admin_permission:assign')">
+                    </div>
+                    <div class="ml-3 text-sm flex-1">
+                      <label [for]="item.code" class="font-medium text-gray-800 dark:text-slate-200 cursor-pointer block select-none">
+                        {{ item.label }}
+                      </label>
+                      <p class="text-xs text-gray-500 dark:text-slate-400 mt-1 font-mono">{{ item.code }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="authService.hasPermission('admin_permission:assign')" class="p-4 border-t border-gray-100 dark:border-slate-700 flex justify-end gap-3 bg-white dark:bg-slate-800 shrink-0">
+              <button (click)="savePermissions()" [disabled]="isSaving()"
+                      class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 flex items-center">
+                <svg *ngIf="isSaving()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                Lưu thay đổi
+              </button>
+            </div>
+          </ng-container>
+        </div>
       </div>
 
+      <div *ngIf="!authService.hasPermission('admin:read')" class="w-full flex flex-col items-center justify-center p-12 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 min-h-[400px]">
+        <div class="bg-gray-50 dark:bg-slate-900 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 border border-gray-100 dark:border-slate-700">
+          <svg class="h-10 w-10 text-gray-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800 dark:text-slate-200 mb-2">Không có quyền xem danh sách</h3>
+        <p class="text-gray-500 dark:text-slate-400 max-w-md mx-auto text-center">Tài khoản của bạn không được cấp quyền xem danh sách Admin. Bạn chỉ có thể thực hiện thao tác Thêm mới nếu được phân quyền.</p>
+        <button *ngIf="authService.hasPermission('admin:create')" (click)="openAddModal()" class="mt-6 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          Thêm Admin mới
+        </button>
+      </div>
       <!-- Add Admin Modal -->
       <div *ngIf="showAddModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
         <div class="fixed inset-0 bg-gray-900/60 dark:bg-gray-900/80 backdrop-blur-sm transition-opacity" (click)="closeAddModal()"></div>
@@ -181,8 +196,8 @@ interface PermissionGroup {
               <input type="text" [(ngModel)]="newAdmin.username" name="username" required class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors">
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Email</label>
-              <input type="email" [(ngModel)]="newAdmin.email" name="email" class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors">
+              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Email <span class="text-red-500">*</span></label>
+              <input type="email" [(ngModel)]="newAdmin.email" name="email" required class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Mật khẩu khởi tạo <span class="text-red-500">*</span></label>
@@ -260,10 +275,13 @@ export class PermissionManagerComponent implements OnInit {
   searchQuery = signal<string>('');
 
   filteredUsers = computed(() => {
-    const query = this.searchQuery().toLowerCase().trim();
-    if (!query) return this.allUsers();
+    // Luôn ẩn tài khoản admin tổng có id = 1 (Tài khoản root tạo đầu tiên)
+    const usersWithoutSuperAdmin = this.allUsers().filter(u => u.id !== 1);
 
-    return this.allUsers().filter(u =>
+    const query = this.searchQuery().toLowerCase().trim();
+    if (!query) return usersWithoutSuperAdmin;
+
+    return usersWithoutSuperAdmin.filter(u =>
       u.fullName.toLowerCase().includes(query) ||
       u.email?.toLowerCase().includes(query) ||
       u.username.toLowerCase().includes(query)
@@ -325,10 +343,13 @@ export class PermissionManagerComponent implements OnInit {
   ];
 
   ngOnInit() {
-    this.loadUsers();
+    if (this.authService.hasPermission('admin:read')) {
+      this.loadUsers();
+    }
   }
 
   loadUsers() {
+    if (!this.authService.hasPermission('admin:read')) return;
     this.isLoading.set(true);
     this.adminService.getAllAdmins().subscribe({
       next: (data) => {
@@ -376,27 +397,9 @@ export class PermissionManagerComponent implements OnInit {
     if (current.has(item.code)) {
       // Uncheck
       current.delete(item.code);
-
-      // If unchecking a 'read' permission, auto-uncheck dependents
-      if (item.code.endsWith(':read')) {
-        this.groups.forEach(g => {
-          g.items.forEach(i => {
-            if (i.implicitReads?.includes(item.code)) {
-              current.delete(i.code);
-            }
-          });
-        });
-      }
     } else {
       // Check
       current.add(item.code);
-
-      // Auto-check dependencies
-      if (item.implicitReads) {
-        item.implicitReads.forEach(readCode => {
-          current.add(readCode);
-        });
-      }
     }
 
     this.currentPermissions.set(current);
@@ -465,6 +468,22 @@ export class PermissionManagerComponent implements OnInit {
         },
         error: (err) => {
           this.isAdding.set(false);
+
+          // Xử lý lỗi validation từ .NET (ValidationProblemDetails)
+          if (err.status === 400 && err.error?.errors) {
+            const errors = err.error.errors;
+            let errorMessages = [];
+            for (const key in errors) {
+              if (errors.hasOwnProperty(key)) {
+                errorMessages.push(...errors[key]);
+              }
+            }
+            if (errorMessages.length > 0) {
+              this.toastService.error(errorMessages.join('\n'));
+              return;
+            }
+          }
+
           this.toastService.error(err.error?.message || 'Có lỗi xảy ra khi tạo tài khoản.');
         }
     });
@@ -510,6 +529,22 @@ export class PermissionManagerComponent implements OnInit {
       },
       error: (err) => {
         this.isEditing.set(false);
+
+        // Xử lý lỗi validation từ .NET (ValidationProblemDetails)
+        if (err.status === 400 && err.error?.errors) {
+          const errors = err.error.errors;
+          let errorMessages = [];
+          for (const key in errors) {
+            if (errors.hasOwnProperty(key)) {
+              errorMessages.push(...errors[key]);
+            }
+          }
+          if (errorMessages.length > 0) {
+            this.toastService.error(errorMessages.join('\n'));
+            return;
+          }
+        }
+
         this.toastService.error(err.error?.message || 'Có lỗi xảy ra khi cập nhật thông tin.');
       }
     });
