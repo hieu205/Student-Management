@@ -1,17 +1,14 @@
-import { Injectable, inject } from '@angular/core';
+﻿import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Router } from '@angular/router';
 
 export interface LoginResponse {
   accessToken: string;
-  expiresIn: number;
   admin: {
     id: number;
     username: string;
     fullName: string;
-    email: string;
-    roles: string[];
     permissions: string[];
   };
 }
@@ -27,6 +24,14 @@ export class AuthService {
 
   login(credentials: { username: string; password: string }): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.BASE_URL}/login`, credentials);
+  }
+
+  forgotPassword(email: string): Observable<any> {
+    return this.http.post(`${this.BASE_URL}/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<any> {
+    return this.http.post(`${this.BASE_URL}/reset-password`, { token, newPassword });
   }
 
   // --- Các hàm tiện ích quản lý Token ---
@@ -60,7 +65,6 @@ export class AuthService {
   logout() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('current_user');
-    // Điều hướng về trang login
     this.router.navigate(['/login']);
   }
 }

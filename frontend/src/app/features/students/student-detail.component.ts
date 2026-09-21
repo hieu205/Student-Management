@@ -67,7 +67,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Họ Tên</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Vai trò</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Điện thoại</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Thao tác</th>
+                <th *ngIf="authService.hasPermission('student_parent:remove')" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Thao tác</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-slate-700">
@@ -78,7 +78,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">{{ parent.phoneNumber }}</td>
                 <td class="px-4 py-3 text-right">
-                  <button (click)="removeParent(parent.id)" class="text-red-500 hover:text-red-700 text-sm font-medium">Gỡ liên kết</button>
+                  <button *ngIf="authService.hasPermission('student_parent:remove')" (click)="removeParent(parent.id)" class="text-red-500 hover:text-red-700 text-sm font-medium">Gỡ liên kết</button>
                 </td>
               </tr>
             </tbody>
@@ -90,7 +90,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
         </div>
 
         <!-- Form Gán thêm Phụ huynh với tính năng Tìm kiếm -->
-        <div class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-lg border border-blue-100 relative">
+        <div *ngIf="authService.hasPermission('student_parent:assign')" class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-lg border border-blue-100 relative">
           <h4 class="font-semibold text-blue-800 dark:text-blue-300 mb-3">Gán thêm Phụ huynh từ Hệ thống</h4>
 
           <!-- Màn chắn (Backdrop) để tắt dropdown khi bấm ra ngoài -->
