@@ -30,6 +30,8 @@ builder.Services.AddScoped<IParentRepository, ParentRepository>();
 builder.Services.AddScoped<IStudentParentRepository, StudentParentRepository>();
 
 builder.Services.AddScoped<IEmailService, EmailService>(); // 👈 Đã thêm EmailService
+builder.Services.AddSingleton<IEmailQueueService, EmailQueueService>();
+builder.Services.AddHostedService<EmailWorkerService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
