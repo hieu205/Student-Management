@@ -84,11 +84,18 @@ public class StudentService : IStudentService
 
     public async Task<StudentDetailResponseDto> CreateStudentAsync(StudentRequest request)
     {
-        // 1. Kiểm tra mã học sinh trùng lặp
-        var existingStudent = await _studentRepository.GetByMhsAsync(request.Mhs);
+        // 1. Validate định dạng mã học sinh: phải bắt đầu bằng "HS" và chỉ chứa số phía sau
+        var mhsNormalized = request.Mhs?.Trim().ToUpper() ?? string.Empty;
+        if (!System.Text.RegularExpressions.Regex.IsMatch(mhsNormalized, @"^HS[0-9]+$"))
+        {
+            throw new BadRequestException("Mã học sinh phải bắt đầu bằng 'HS' và theo sau là số (VD: HS001)");
+        }
+
+        // 2. Kiểm tra mã học sinh trùng lặp
+        var existingStudent = await _studentRepository.GetByMhsAsync(mhsNormalized);
         if (existingStudent != null)
         {
-            throw new ConflictException($"Mã học sinh '{request.Mhs}' đã tồn tại");
+            throw new ConflictException($"Mã học sinh '{mhsNormalized}' đã tồn tại");
         }
 
         // 2. TÌM VÀ KIỂM TRA PHỤ HUYNH TRƯỚC (Validate trước khi ghi bất kỳ dữ liệu nào vào DB)
@@ -111,10 +118,10 @@ public class StudentService : IStudentService
             }
         }
 
-        // 3. Khởi tạo đối tượng Student
+        // 3. Khởi tạo đối tượng Student (normalize Mhs về chữ HOA)
         var student = new Student
         {
-            Mhs = request.Mhs,
+            Mhs = request.Mhs.Trim().ToUpper(),
             FullName = request.FullName,
             DateOfBirth = request.DateOfBirth,
             Gender = NormalizeGender(request.Gender),
@@ -174,17 +181,18 @@ public class StudentService : IStudentService
             throw new NotFoundException($"Khong tim thay student co id {id}");
         }
 
-        // Validate Mhs trùng, loại trừ chính student đang update
-        if (!string.IsNullOrWhiteSpace(request.Mhs) && request.Mhs != student.Mhs)
+        // Validate Mhs trùng, loại trừ chính student đang update (so sánh case-insensitive)
+        if (!string.IsNullOrWhiteSpace(request.Mhs) && 
+            !request.Mhs.Trim().Equals(student.Mhs, StringComparison.OrdinalIgnoreCase))
         {
-            var existingStudent = await _studentRepository.GetByMhsAsync(request.Mhs);
+            var existingStudent = await _studentRepository.GetByMhsAsync(request.Mhs.Trim());
             if (existingStudent != null)
             {
-                throw new ConflictException($"Mã học sinh '{request.Mhs}' đã tồn tại");
+                throw new ConflictException($"Mã học sinh '{request.Mhs.Trim().ToUpper()}' đã tồn tại");
             }
         }
 
-        student.Mhs = request.Mhs;
+        student.Mhs = request.Mhs.Trim().ToUpper();
         student.FullName = request.FullName;
         student.DateOfBirth = request.DateOfBirth;
         student.Gender = NormalizeGender(request.Gender);

@@ -50,7 +50,8 @@ import { QuillModule } from 'ngx-quill';
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                 </div>
-                <input type="text" formControlName="phoneNumber" (input)="f['phoneNumber'].setErrors(null)"
+                <input type="text" formControlName="phoneNumber"
+                  (input)="clearServerError('phoneNumber')"
                   class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
                   [ngClass]="{'border-red-500': (submitted() || f['phoneNumber'].dirty) && f['phoneNumber'].errors}">
               </div>
@@ -68,12 +69,13 @@ import { QuillModule } from 'ngx-quill';
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                 </div>
-                <input type="email" formControlName="email" (input)="f['email'].setErrors(null)"
+                <input type="email" formControlName="email"
+                  (input)="clearServerError('email')"
                   class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white"
                   [ngClass]="{'border-red-500': (submitted() || f['email'].dirty) && f['email'].errors}">
               </div>
               <div *ngIf="(submitted() || f['email'].dirty) && f['email'].errors" class="text-red-500 text-xs mt-1">
-                <p *ngIf="f['email'].errors['email']">Email không hợp lệ</p>
+                <p *ngIf="f['email'].errors['pattern']">Email không hợp lệ</p>
                 <p *ngIf="f['email'].errors['serverError']" class="font-semibold">{{ f['email'].errors['serverError'] }}</p>
               </div>
             </div>
@@ -150,15 +152,21 @@ export class ParentFormComponent implements OnInit {
     fullName: ['', [Validators.required, Validators.pattern(/^[a-zA-ZÀ-ỹ\s]*[a-zA-ZÀ-ỹ][a-zA-ZÀ-ỹ\s]*$/)]],
     phoneNumber: ['', [
       Validators.required,
-      Validators.pattern(/^(0[3|5|7|8|9])+([0-9]{8})$/)
+      Validators.pattern(/^0[35789][0-9]{8}$/)
     ]],
-    email: ['', [Validators.email]],
+    email: ['', [Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|vn|edu|gov|net|org|io|biz|info)$/i)]],
     occupationSelect: [''],
     occupation: ['', [Validators.pattern(/^[a-zA-ZÀ-ỹ\s]*$/)]],
     address: ['']
   });
 
   get f() { return this.parentForm.controls; }
+
+  clearServerError(field: string) {
+    if (this.f[field].hasError('serverError')) {
+      this.f[field].updateValueAndValidity({ emitEvent: false });
+    }
+  }
 
   ngOnInit() {
     this.parentForm.get('occupationSelect')?.valueChanges.subscribe(val => {

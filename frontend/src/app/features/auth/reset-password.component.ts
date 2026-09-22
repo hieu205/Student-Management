@@ -58,7 +58,7 @@ import { AuthService } from '../../core/auth/auth.service';
                 </div>
                 <div *ngIf="submitted() && f['newPassword'].errors" class="text-red-500 text-xs mt-1 font-medium">
                   <span *ngIf="f['newPassword'].errors['required']">Vui lòng nhập mật khẩu mới</span>
-                  <span *ngIf="f['newPassword'].errors['pattern']">Mật khẩu phải từ 8 ký tự, gồm chữ hoa, thường, số và ký tự đặc biệt (@$!%*?&).</span>
+                  <span *ngIf="f['newPassword'].errors['pattern']">Mật khẩu phải từ 6 ký tự, gồm chữ hoa, thường, số và ký tự đặc biệt (@$!%*?&).</span>
                 </div>
               </div>
 

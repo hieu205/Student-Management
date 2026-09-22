@@ -34,6 +34,11 @@ public class RoleRepository : IRoleRepository
             .ToListAsync();
     }
 
+    public async Task<List<Permission>> GetAllPermissionsAsync()
+    {
+        return await _context.Permissions.OrderBy(p => p.Id).ToListAsync();
+    }
+
     public async Task<Role> CreateRoleAsync(Role role, List<int> permissionIds)
     {
         // Dùng transaction để đảm bảo Role và RolePermissions được tạo cùng nhau

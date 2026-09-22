@@ -35,6 +35,14 @@ public class AdminController : ControllerBase
         return Ok(res);
     }
 
+    [HttpPost]
+    [HasPermission("admin:create")]
+    public async Task<ActionResult<AdminResponse>> Create([FromBody] CreateAdminRequest request)
+    {
+        var res = await _adminService.CreateAdmin(request);
+        return CreatedAtAction(nameof(GetProfileAdmin), new { id = res.Id }, res);
+    }
+
     [HttpPut("{id}")]
     [HasPermission("admin:update")]
     public async Task<ActionResult<AdminResponse>> Update([FromRoute] int id, [FromBody] AdminRequest request)
