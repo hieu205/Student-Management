@@ -1,4 +1,5 @@
 using System.Reflection;
+using backend.Models;
 using demo_dotnet.backend.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -14,11 +15,15 @@ public class AppDbContext : DbContext
     public DbSet<Parent> Parents => Set<Parent>();
     public DbSet<StudentParent> StudentParents => Set<StudentParent>();
 
-    // Khai báo các DbSet mới cho phân quyền
+    // Khai báo các DbSet cho phân quyền
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<AdminPermission> AdminPermissions => Set<AdminPermission>();
+
+    // Khai báo các DbSet mới cho tính năng Chat
+    public DbSet<ChatRoom> ChatRooms => Set<ChatRoom>();
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,8 +41,10 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Role>().ToTable("role");
         modelBuilder.Entity<RolePermission>().ToTable("role_permission");
         modelBuilder.Entity<AdminPermission>().ToTable("admin_permission");
+        modelBuilder.Entity<ChatRoom>().ToTable("chat_room");
+        modelBuilder.Entity<ChatMessage>().ToTable("chat_message");
 
-        // 2. Map tên các cột khóa chính & ngoại sang kiểu snake_case (chữ thường có gạch dưới)
+        // 2. Map tên các cột khóa chính & ngoại sang kiểu snake_case
         modelBuilder.Entity<Permission>(entity =>
         {
             entity.Property(p => p.Id).HasColumnName("id");
@@ -84,6 +91,50 @@ public class AppDbContext : DbContext
             entity.HasOne(ap => ap.Permission)
                   .WithMany(p => p.AdminPermissions)
                   .HasForeignKey(ap => ap.PermissionId);
+        });
+
+        // Cấu hình Bảng ChatRoom
+        modelBuilder.Entity<ChatRoom>(entity =>
+        {
+            entity.Property(cr => cr.Id).HasColumnName("id");
+            entity.Property(cr => cr.Admin1Id).HasColumnName("admin1_id");
+            entity.Property(cr => cr.Admin2Id).HasColumnName("admin2_id");
+            entity.Property(cr => cr.CreatedAt).HasColumnName("created_at");
+            entity.Property(cr => cr.UpdatedAt).HasColumnName("updated_at");
+
+            // Đảm bảo chỉ tồn tại 1 phòng chat giữa cặp 2 Admin
+            entity.HasIndex(cr => new { cr.Admin1Id, cr.Admin2Id }).IsUnique();
+
+            entity.HasOne(cr => cr.Admin1)
+                  .WithMany()
+                  .HasForeignKey(cr => cr.Admin1Id)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(cr => cr.Admin2)
+                  .WithMany()
+                  .HasForeignKey(cr => cr.Admin2Id)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Cấu hình Bảng ChatMessage
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.Property(cm => cm.Id).HasColumnName("id");
+            entity.Property(cm => cm.RoomId).HasColumnName("room_id");
+            entity.Property(cm => cm.SenderId).HasColumnName("sender_id");
+            entity.Property(cm => cm.Content).HasColumnName("content");
+            entity.Property(cm => cm.IsRead).HasColumnName("is_read");
+            entity.Property(cm => cm.CreatedAt).HasColumnName("created_at");
+
+            entity.HasOne(cm => cm.Room)
+                  .WithMany(r => r.Messages)
+                  .HasForeignKey(cm => cm.RoomId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(cm => cm.Sender)
+                  .WithMany()
+                  .HasForeignKey(cm => cm.SenderId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

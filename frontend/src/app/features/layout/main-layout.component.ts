@@ -133,7 +133,7 @@ import { ThemeService } from '../../core/services/theme.service';
             </a>
 
             <!-- Students Menu -->
-            <a *ngIf="authService.hasPermission('student:read') || authService.hasPermission('student:create') || authService.hasPermission('student:update') || authService.hasPermission('student:delete')" routerLink="/students" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
+            <a routerLink="/students" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
                (click)="closeSidebarOnMobile()"
                class="text-gray-900 dark:text-slate-300 group flex items-center py-2 text-base font-medium rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 mt-1 transition-all duration-300 whitespace-nowrap"
                [ngClass]="isSidebarCollapsed ? 'px-0 md:justify-center' : 'px-2 justify-start'"
@@ -146,14 +146,15 @@ import { ThemeService } from '../../core/services/theme.service';
             </a>
 
             <!-- Parents Menu -->
-            <a *ngIf="authService.hasPermission('parent:read') || authService.hasPermission('parent:create') || authService.hasPermission('parent:update') || authService.hasPermission('parent:delete')" routerLink="/parents" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
+            <a routerLink="/parents" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
                (click)="closeSidebarOnMobile()"
                class="text-gray-900 dark:text-slate-300 group flex items-center py-2 text-base font-medium rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 mt-1 transition-all duration-300 whitespace-nowrap"
-               [ngClass]="isSidebarCollapsed ? 'px-0 md:justify-center' : 'px-2 justify-start'">
-              <svg [ngClass]="isSidebarCollapsed ? 'mr-0' : 'mr-3'" class="flex-shrink-0 h-6 w-6 text-gray-400 group-hover:text-gray-500 dark:text-slate-400 dark:group-hover:text-slate-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               [ngClass]="isSidebarCollapsed ? 'px-0 md:justify-center' : 'px-2 justify-start'"
+               [title]="isSidebarCollapsed ? 'Phụ huynh' : ''">
+              <svg class="flex-shrink-0 h-5 w-5 text-gray-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <span class="truncate transition-all duration-300"
+              <span class="transition-all duration-300 block overflow-hidden"
                     [ngClass]="isSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-xs opacity-100 ml-3'">Phụ huynh</span>
             </a>
 
@@ -168,6 +169,19 @@ import { ThemeService } from '../../core/services/theme.service';
                </svg>
                <span class="transition-all duration-300 block overflow-hidden"
                      [ngClass]="isSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-xs opacity-100 ml-3'">Phân quyền</span>
+            </a>
+
+            <!-- Roles Menu -->
+            <a *ngIf="authService.hasPermission('role:read') || authService.hasPermission('role:manage')" routerLink="/roles" routerLinkActive="bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400"
+               (click)="closeSidebarOnMobile()"
+               class="text-gray-900 dark:text-slate-300 group flex items-center py-2 text-base font-medium rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 mt-1 transition-all duration-300 whitespace-nowrap"
+               [ngClass]="isSidebarCollapsed ? 'px-0 md:justify-center' : 'px-2 justify-start'"
+               [title]="isSidebarCollapsed ? 'Nhóm quyền' : ''">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0 text-gray-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+               </svg>
+               <span class="transition-all duration-300 block overflow-hidden"
+                     [ngClass]="isSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-xs opacity-100 ml-3'">Nhóm quyền</span>
             </a>
           </nav>
         </aside>

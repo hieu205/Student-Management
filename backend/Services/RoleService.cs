@@ -87,6 +87,17 @@ public class RoleService : IRoleService
         await _roleRepository.DeleteRoleAsync(id);
     }
 
+    public async Task<List<PermissionResponse>> GetAllPermissionsAsync()
+    {
+        var permissions = await _roleRepository.GetAllPermissionsAsync();
+        return permissions.Select(p => new PermissionResponse
+        {
+            Id = p.Id,
+            Code = p.Code,
+            Description = p.Description
+        }).ToList();
+    }
+
     // ────────────────────────────────────────────────────────────────
     // Private helpers
     // ────────────────────────────────────────────────────────────────

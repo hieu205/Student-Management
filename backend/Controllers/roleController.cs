@@ -31,6 +31,18 @@ public class RoleController : ControllerBase
     }
 
     /// <summary>
+    /// Lấy danh sách toàn bộ các quyền có trong hệ thống để Frontend hiển thị form tick chọn.
+    /// Yêu cầu quyền: role:read hoặc role:manage
+    /// </summary>
+    [HttpGet("permissions")]
+    [HasPermission("role:read")]
+    public async Task<ActionResult<ApiResponse<List<PermissionResponse>>>> GetAllPermissions()
+    {
+        var result = await _roleService.GetAllPermissionsAsync();
+        return Ok(ApiResponse<List<PermissionResponse>>.Success(result, "Lấy danh sách quyền thành công."));
+    }
+
+    /// <summary>
     /// Lấy chi tiết một Role theo ID.
     /// Yêu cầu quyền: role:read
     /// </summary>

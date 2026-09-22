@@ -10,6 +10,9 @@ public interface IRoleRepository
     /// <summary>Trả về danh sách các ID permission thực sự tồn tại trong DB từ danh sách đầu vào.</summary>
     Task<List<int>> GetExistingPermissionIdsAsync(List<int> permissionIds);
 
+    /// <summary>Lấy toàn bộ danh sách các quyền (permissions) có trong hệ thống.</summary>
+    Task<List<Permission>> GetAllPermissionsAsync();
+
     /// <summary>Tạo role mới kèm danh sách permission trong một transaction.</summary>
     Task<Role> CreateRoleAsync(Role role, List<int> permissionIds);
 

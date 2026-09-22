@@ -9,4 +9,5 @@ public interface IRoleService
     Task<RoleResponse> GetRoleByIdAsync(int id);
     Task<RoleResponse> UpdateRoleAsync(int id, RoleRequest request);
     Task DeleteRoleAsync(int id);
+    Task<List<PermissionResponse>> GetAllPermissionsAsync();
 }
