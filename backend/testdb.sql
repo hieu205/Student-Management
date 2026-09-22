@@ -96,3 +96,38 @@ ADD COLUMN reset_token_expires TIMESTAMP;
 
 -- 3. (Tùy chọn tối ưu) Tạo Index giúp truy vấn tìm kiếm Token trong DB nhanh hơn
 CREATE INDEX idx_admin_password_reset_token ON admin (password_reset_token);
+
+-- ============================================
+-- Bổ sung Tính năng Realtime Chat Admin <-> Admin
+-- Schema PostgreSQL
+-- ============================================
+
+-- 1. Tạo Bảng chat_room (Quản lý phòng chat giữa 2 Admin)
+CREATE TABLE chat_room (
+    id         BIGSERIAL PRIMARY KEY,
+    admin1_id  INT NOT NULL REFERENCES admin(id) ON DELETE RESTRICT,
+    admin2_id  INT NOT NULL REFERENCES admin(id) ON DELETE RESTRICT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    
+    -- Đảm bảo giữa 2 Admin bất kỳ chỉ tồn tại duy nhất 1 phòng chat
+    CONSTRAINT uq_admin1_admin2 UNIQUE (admin1_id, admin2_id)
+);
+
+-- 2. Tạo Bảng chat_message (Lưu trữ tin nhắn)
+CREATE TABLE chat_message (
+    id         BIGSERIAL PRIMARY KEY,
+    room_id    BIGINT NOT NULL REFERENCES chat_room(id) ON DELETE CASCADE,
+    sender_id  INT NOT NULL REFERENCES admin(id) ON DELETE RESTRICT,
+    content    TEXT NOT NULL,
+    is_read    BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- 3. Tạo các Indexes phụ trợ để tối ưu tốc độ truy vấn
+CREATE INDEX idx_chat_room_admin1 ON chat_room (admin1_id);
+CREATE INDEX idx_chat_room_admin2 ON chat_room (admin2_id);
+CREATE INDEX idx_chat_room_updated_at ON chat_room (updated_at DESC);
+
+CREATE INDEX idx_chat_message_room_created ON chat_message (room_id, created_at DESC);
+CREATE INDEX idx_chat_message_unread ON chat_message (room_id, sender_id, is_read) WHERE is_read = FALSE;

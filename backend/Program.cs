@@ -1,4 +1,3 @@
-
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -10,10 +9,11 @@ using demo_dotnet.backend.Data;
 using demo_dotnet.backend.Data.Interfaces;
 using demo_dotnet.backend.Data.Repositories;
 using demo_dotnet.backend.exception;
+using demo_dotnet.backend.Hubs;
 using demo_dotnet.backend.Security;
 using demo_dotnet.backend.Services;
+using demo_dotnet.backend.Services.Interfaces;
 using demo_dotnet.backend.Services.Interface;
-
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
@@ -30,15 +30,20 @@ builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<IParentRepository, ParentRepository>();
 builder.Services.AddScoped<IStudentParentRepository, StudentParentRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSingleton<IEmailQueueService, EmailQueueService>();
 builder.Services.AddHostedService<EmailWorkerService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IParentService, ParentService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
+
+// 👈 2. BỔ SUNG: Dịch vụ SignalR
+builder.Services.AddSignalR();
 
 // 3. CONTROLLERS & VALIDATION RESPONSE FORMAT
 builder.Services.AddControllers()
@@ -93,6 +98,21 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
+
+    // 👈 3. BỔ SUNG: Cấu hình đọc JWT Token từ Query String "access_token" cho kết nối SignalR
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 // 5. AUTHORIZATION & DYNAMIC PERMISSION PROVIDER
@@ -103,11 +123,14 @@ builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProv
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontendPolicy", policy =>
+
     {
+
         policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:4200")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+             // policy.SetIsOriginAllowed(origin => true)
+             .AllowAnyHeader()
+             .AllowAnyMethod()
+             .AllowCredentials(); // Đã có sẵn, bắt buộc cho SignalR
     });
 });
 
@@ -159,5 +182,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// 👈 4. BỔ SUNG: Map Route Endpoint cho SignalR Hub
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();
