@@ -18,6 +18,11 @@ public class ChatService : IChatService
 
     public async Task<long> GetOrCreateRoomIdAsync(int admin1Id, int admin2Id)
     {
+        if (admin1Id == admin2Id)
+        {
+            throw new ArgumentException("Cannot create a chat room with yourself.");
+        }
+
         var room = await _chatRepository.GetRoomBetweenAdminsAsync(admin1Id, admin2Id);
         if (room == null)
         {

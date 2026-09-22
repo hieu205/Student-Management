@@ -37,7 +37,7 @@ import { Subscription } from 'rxjs';
                [ngClass]="{'bg-blue-50 dark:bg-slate-800 border-l-4 border-l-blue-500': selectedRoom()?.partnerId === room.partnerId}">
             <div class="flex justify-between items-start mb-1">
               <span class="font-semibold text-gray-900 dark:text-slate-100 truncate pr-2">{{ room.partnerName }}</span>
-              <span class="text-xs text-gray-500 whitespace-nowrap">{{ room.lastMessageTime ? (room.lastMessageTime | date:'HH:mm') : '' }}</span>
+              <span class="text-xs text-gray-500 whitespace-nowrap">{{ room.lastMessageTime ? (room.lastMessageTime + 'Z' | date:'HH:mm') : '' }}</span>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-sm text-gray-500 dark:text-slate-400 truncate w-4/5">{{ room.lastMessage || 'Chưa có tin nhắn' }}</span>
@@ -79,7 +79,7 @@ import { Subscription } from 'rxjs';
                               : 'bg-white dark:bg-slate-700 text-gray-800 dark:text-slate-200 border border-gray-100 dark:border-slate-600 shadow-sm rounded-bl-none'">
                 <p class="text-sm whitespace-pre-wrap break-words">{{ msg.content }}</p>
               </div>
-              <span class="text-[10px] text-gray-400 mt-1 mx-1">{{ msg.createdAt | date:'HH:mm dd/MM/yyyy' }}</span>
+              <span class="text-[10px] text-gray-400 mt-1 mx-1">{{ msg.createdAt + 'Z' | date:'HH:mm dd/MM/yyyy' }}</span>
             </div>
             <div *ngIf="messages().length === 0 && !isLoadingMessages()" class="text-center text-sm text-gray-500 my-8">
               Hãy gửi tin nhắn đầu tiên để bắt đầu trò chuyện.
