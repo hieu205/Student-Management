@@ -59,7 +59,7 @@ import { PERMISSION_GROUPS, PermissionGroup, PermissionItem } from '../../core/c
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-semibold rounded-full whitespace-nowrap">
-                    {{ role.permissions?.length || 0 }} quyền
+                    {{ role.permissions.length || 0 }} quyền
                   </span>
                 </div>
               </div>
