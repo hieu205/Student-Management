@@ -14,7 +14,6 @@ public class ChatRepository : IChatRepository
         _context = context;
     }
 
-    // Đã đổi long -> int
     public async Task<ChatRoom?> GetRoomBetweenAdminsAsync(int admin1Id, int admin2Id)
     {
         var minId = Math.Min(admin1Id, admin2Id);
@@ -39,7 +38,6 @@ public class ChatRepository : IChatRepository
         return room;
     }
 
-    // Đã đổi long -> int
     public async Task<List<ChatRoom>> GetRoomsByAdminIdAsync(int adminId)
     {
         return await _context.ChatRooms
