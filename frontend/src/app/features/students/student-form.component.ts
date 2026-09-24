@@ -37,12 +37,13 @@ import { SCHOOL_CLASSES } from '../../core/constants/app.constants';
             <!-- Mã học sinh -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Mã học sinh <span class="text-red-500">*</span></label>
-              <input type="text" formControlName="studentCode" (input)="f['studentCode'].setErrors(null)"
+              <input type="text" formControlName="studentCode"
+                (input)="onMhsInput($event)"
                 class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-slate-800 dark:text-white uppercase"
                 [ngClass]="{'border-red-500': (submitted() || f['studentCode'].dirty) && f['studentCode'].errors}">
               <div *ngIf="(submitted() || f['studentCode'].dirty) && f['studentCode'].errors" class="text-red-500 text-xs mt-1">
                 <p *ngIf="f['studentCode'].errors['required']">Mã học sinh là bắt buộc</p>
-                <p *ngIf="f['studentCode'].errors['pattern']">Mã học sinh chỉ chứa chữ và số</p>
+                <p *ngIf="f['studentCode'].errors['pattern']">Mã học sinh phải bắt đầu bằng "HS" và theo sau là số (VD: HS001)</p>
                 <p *ngIf="f['studentCode'].errors['serverError']" class="font-semibold">{{ f['studentCode'].errors['serverError'] }}</p>
               </div>
             </div>
@@ -199,6 +200,14 @@ export class StudentFormComponent implements OnInit {
   }
 
   get f() { return this.studentForm.controls; }
+
+  onMhsInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const uppercased = input.value.toUpperCase();
+    input.value = uppercased;
+    this.f['studentCode'].setValue(uppercased, { emitEvent: false });
+    this.f['studentCode'].updateValueAndValidity({ emitEvent: false });
+  }
 
   private checkEditMode() {
     let id = this.studentId;

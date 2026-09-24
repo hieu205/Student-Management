@@ -1,5 +1,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ToastService } from '../../shared/components/toast/toast.service';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { AdminService } from '../../core/services/admin.service';
@@ -53,8 +54,9 @@ import { AdminService } from '../../core/services/admin.service';
               <input formControlName="fullName" type="text"
                 class="shadow-sm appearance-none border border-gray-300 dark:border-slate-600 rounded-lg w-full py-2.5 px-3 text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 [ngClass]="{'border-red-500': f['fullName'].invalid && f['fullName'].touched}">
-              <div *ngIf="f['fullName'].invalid && f['fullName'].touched" class="text-red-500 text-xs mt-1 font-medium">
-                Vui lòng nhập họ và tên.
+              <div *ngIf="f['fullName'].invalid && (f['fullName'].dirty || f['fullName'].touched)" class="text-red-500 text-xs mt-1 font-medium">
+                <span *ngIf="f['fullName'].errors?.['required']">Vui lòng nhập họ và tên.</span>
+                <span *ngIf="f['fullName'].errors?.['pattern']">Họ tên không được chứa số và ký tự đặc biệt.</span>
               </div>
             </div>
 
@@ -72,8 +74,9 @@ import { AdminService } from '../../core/services/admin.service';
               <input formControlName="email" type="email"
                 class="shadow-sm appearance-none border border-gray-300 dark:border-slate-600 rounded-lg w-full py-2.5 px-3 text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 [ngClass]="{'border-red-500': f['email'].invalid && f['email'].touched}">
-              <div *ngIf="f['email'].invalid && f['email'].touched" class="text-red-500 text-xs mt-1 font-medium">
-                Vui lòng nhập email hợp lệ.
+              <div *ngIf="f['email'].invalid && (f['email'].dirty || f['email'].touched)" class="text-red-500 text-xs mt-1 font-medium">
+                <span *ngIf="f['email'].errors?.['required']">Vui lòng nhập email.</span>
+                <span *ngIf="f['email'].errors?.['pattern']">Vui lòng nhập email hợp lệ (VD: @gmail.com).</span>
               </div>
             </div>
 
@@ -115,6 +118,7 @@ export class ProfileComponent implements OnInit {
   private authService = inject(AuthService);
   private adminService = inject(AdminService);
   private fb = inject(FormBuilder);
+  private toastService = inject(ToastService);
 
   user = this.authService.getCurrentUser();
   avatarUrl = signal<string | null>(null);
@@ -123,9 +127,12 @@ export class ProfileComponent implements OnInit {
   showSuccess = signal(false);
   isEditing = signal(false);
 
+    fullNameRegex = '^[a-zA-Z_ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\\s]+$';
+  emailRegex = '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.(com|vn|net|org|edu|gov|io|biz|info)$';
+
   profileForm: FormGroup = this.fb.group({
-    fullName: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]]
+    fullName: ['', [Validators.required, Validators.pattern(this.fullNameRegex)]],
+    email: ['', [Validators.required, Validators.pattern(this.emailRegex)]]
   });
 
   get f() { return this.profileForm.controls; }
@@ -194,10 +201,25 @@ export class ProfileComponent implements OnInit {
         // Force reload để Header cập nhật tên/avatar
         window.dispatchEvent(new Event('storage'));
       },
-      error: (err) => {
+            error: (err) => {
         this.isLoading.set(false);
         console.error('Lỗi khi cập nhật hồ sơ:', err);
-        alert(err.error?.message || 'Có lỗi xảy ra khi cập nhật hồ sơ.');
+
+        if (err.status === 400 && err.error?.errors) {
+          const errors = err.error.errors;
+          let errorMessages = [];
+          for (const key in errors) {
+            if (errors.hasOwnProperty(key)) {
+              errorMessages.push(...errors[key]);
+            }
+          }
+          if (errorMessages.length > 0) {
+            this.toastService.error(errorMessages.join('\n'));
+            return;
+          }
+        }
+
+        this.toastService.error(err.error?.message || 'Có lỗi xảy ra khi cập nhật hồ sơ.');
       }
     });
   }

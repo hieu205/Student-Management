@@ -26,6 +26,9 @@ public class ChatHub : Hub
         if (string.IsNullOrEmpty(senderClaim) || !long.TryParse(senderClaim, out long senderId))
             return;
 
+        if (senderId == request.ReceiverId)
+            return; // Khong cho phep tu chat voi chinh minh
+
         var messageDto = await _chatService.SaveMessageAsync((int)senderId, request);
 
         // Gửi realtime cho Admin nhận và Admin gửi

@@ -60,7 +60,8 @@ public class StudentRepository : IStudentRepository
 
     public async Task<Student?> GetByMhsAsync(string mhs)
     {
-        return await _context.Students.FirstOrDefaultAsync(s => s.Mhs == mhs);
+        var mhsUpper = mhs.ToUpper();
+        return await _context.Students.FirstOrDefaultAsync(s => s.Mhs.ToUpper() == mhsUpper);
     }
 
     public async Task AddAsync(Student student)

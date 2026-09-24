@@ -65,6 +65,44 @@ public class AdminService : IAdminService
         return MapToResponse(admin);
     }
 
+    public async Task<AdminResponse> CreateAdmin(CreateAdminRequest request)
+    {
+        // 1. Kiểm tra username trùng lặp
+        var existingUsername = await _adminRepository.GetByUsernameAsync(request.Username);
+        if (existingUsername != null)
+        {
+            throw new ConflictException("Tên đăng nhập đã tồn tại");
+        }
+
+        // 2. Kiểm tra email trùng lặp nếu có
+        if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            var existingEmail = await _adminRepository.GetByEmailAsync(request.Email);
+            if (existingEmail != null)
+            {
+                throw new ConflictException("Email này đã được sử dụng bởi tài khoản khác");
+            }
+        }
+
+        // 3. Hash mật khẩu (dùng thư viện BCrypt.Net-Next)
+        string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+        // 4. Khởi tạo đối tượng
+        var newAdmin = new Admin
+        {
+            FullName = request.FullName,
+            Username = request.Username,
+            Email = request.Email,
+            PasswordHash = passwordHash,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _adminRepository.AddAsync(newAdmin);
+        await _adminRepository.SaveChangesAsync();
+
+        return MapToResponse(newAdmin);
+    }
+
     public async Task DeleteAdmin(int id, int requesterId)
     {
         var admin = await _adminRepository.GetByIdAsync(id);

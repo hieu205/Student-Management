@@ -4,17 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { AdminService, AdminResponse } from '../../core/services/admin.service';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { AuthService } from '../../core/auth/auth.service';
-
-interface PermissionItem {
-  code: string;
-  label: string;
-  implicitReads?: string[];
-}
-
-interface PermissionGroup {
-  name: string;
-  items: PermissionItem[];
-}
+import { RoleService } from '../../core/services/role.service';
+import { Role } from '../../core/models/role.model';
+import { PERMISSION_GROUPS, PermissionGroup, PermissionItem } from '../../core/constants/permission.constants';
 
 @Component({
   selector: 'app-permission-manager',
@@ -120,35 +112,71 @@ interface PermissionGroup {
               </div>
             </div>
 
-            <!-- Permissions Checkboxes -->
-            <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar bg-gray-50/30 dark:bg-slate-900/30">
-              <div *ngFor="let group of groups">
-                <h3 class="font-bold text-gray-800 dark:text-slate-200 mb-4 pb-2 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2 text-lg">
-                  <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                  {{ group.name }}
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div *ngFor="let item of group.items" class="flex items-start bg-white dark:bg-slate-800 p-3 rounded-lg border border-gray-100 dark:border-slate-700 shadow-sm transition-all hover:border-blue-300 dark:hover:border-blue-700"
-                       [ngClass]="{'border-blue-400 bg-blue-50/50 dark:bg-blue-900/10 dark:border-blue-600': hasPermission(item.code)}">
-                    <div class="flex items-center h-5">
-                      <input type="checkbox"
-                             [id]="item.code"
-                             [checked]="hasPermission(item.code)"
-                             (change)="togglePermission(item)"
-                             [disabled]="!authService.hasPermission('admin_permission:assign')"
-                             class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                             [class.cursor-pointer]="authService.hasPermission('admin_permission:assign')"
-                             [class.cursor-not-allowed]="!authService.hasPermission('admin_permission:assign')">
-                    </div>
-                    <div class="ml-3 text-sm flex-1">
-                      <label [for]="item.code" class="font-medium text-gray-800 dark:text-slate-200 cursor-pointer block select-none">
-                        {{ item.label }}
-                      </label>
-                      <p class="text-xs text-gray-500 dark:text-slate-400 mt-1 font-mono">{{ item.code }}</p>
+            <!-- Roles Accordion -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-gray-50/30 dark:bg-slate-900/30">
+
+              <div *ngFor="let role of allRoles()" class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden transition-all duration-200" [ngClass]="{'ring-2 ring-blue-500': expandedRoleId === role.id}">
+                <!-- Card Header -->
+                <div class="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors" (click)="toggleRole(role.id)">
+                  <div class="flex-1">
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-slate-100">{{ role.name }}</h3>
+                    <p class="text-sm text-gray-500 dark:text-slate-400 mt-0.5">{{ role.description || 'Không có mô tả' }} • <span class="font-medium text-blue-600 dark:text-blue-400">{{ role.permissions.length || 0 }} quyền gốc</span></p>
+                  </div>
+                  <div class="flex items-center gap-4">
+                    <button *ngIf="authService.hasPermission('admin_permission:assign')"
+                            (click)="applyRole(role); $event.stopPropagation()"
+                            class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                      Áp dụng nhóm
+                    </button>
+                    <div class="p-1 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 transition-transform duration-200" [ngClass]="{'rotate-180': expandedRoleId === role.id}">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                   </div>
                 </div>
+
+                <!-- Card Body (Full Permissions List) -->
+                <div *ngIf="expandedRoleId === role.id" class="border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900 p-6 space-y-6">
+
+                  <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800 mb-4">
+                    <p class="text-sm text-blue-800 dark:text-blue-300">
+                      <strong>Lưu ý:</strong> Dưới đây là TẤT CẢ quyền trên hệ thống.
+                      Các quyền được tick là quyền hiện tại của tài khoản <strong>{{ selectedUser()!.username }}</strong>.
+                      Bạn có thể tick thêm quyền ngoài nhóm nếu muốn.
+                    </p>
+                  </div>
+
+                  <div *ngFor="let group of groups">
+                    <h4 class="font-bold text-gray-800 dark:text-slate-200 mb-3 flex items-center gap-2 text-md">
+                      <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                      {{ group.name }}
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div *ngFor="let item of group.items" class="flex items-start bg-white dark:bg-slate-800 p-3 rounded-lg border shadow-sm transition-all hover:border-blue-300 dark:hover:border-blue-700"
+                           [ngClass]="hasPermission(item.code) ? 'border-blue-400 bg-blue-50/30 dark:bg-blue-900/10 dark:border-blue-600' : 'border-gray-200 dark:border-slate-700'">
+                        <div class="flex items-center h-5 mt-0.5">
+                          <input type="checkbox"
+                                 [id]="role.id + '_' + item.code"
+                                 [checked]="hasPermission(item.code)"
+                                 (change)="togglePermission(item)"
+                                 [disabled]="!authService.hasPermission('admin_permission:assign')"
+                                 class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600 cursor-pointer">
+                        </div>
+                        <div class="ml-3 text-sm">
+                          <label [for]="role.id + '_' + item.code" class="font-medium text-gray-900 dark:text-slate-200 cursor-pointer block">{{ item.label }}</label>
+                          <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 font-mono">{{ item.code }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
               </div>
+
+              <!-- Empty Roles State -->
+              <div *ngIf="allRoles().length === 0" class="flex flex-col items-center justify-center p-8 text-gray-400">
+                <p>Chưa có nhóm quyền nào được tạo.</p>
+              </div>
+
             </div>
 
             <div *ngIf="authService.hasPermission('admin_permission:assign')" class="p-4 border-t border-gray-100 dark:border-slate-700 flex justify-end gap-3 bg-white dark:bg-slate-800 shrink-0">
@@ -189,7 +217,8 @@ interface PermissionGroup {
           <form (ngSubmit)="submitAddAdmin()" #addForm="ngForm" class="p-6 space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Họ và Tên <span class="text-red-500">*</span></label>
-              <input type="text" [(ngModel)]="newAdmin.fullName" name="fullName" required class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors">
+              <input type="text" [(ngModel)]="newAdmin.fullName" name="fullName" required [pattern]="fullNameRegex" #addFullName="ngModel" class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors" [ngClass]="{'border-red-500': addFullName.invalid && (addFullName.dirty || addFullName.touched)}">
+              <p *ngIf="addFullName.invalid && (addFullName.dirty || addFullName.touched)" class="text-red-500 text-xs mt-1">Họ tên không được chứa số và ký tự đặc biệt</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Tên đăng nhập (Username) <span class="text-red-500">*</span></label>
@@ -197,11 +226,24 @@ interface PermissionGroup {
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Email <span class="text-red-500">*</span></label>
-              <input type="email" [(ngModel)]="newAdmin.email" name="email" required class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors">
+              <input type="email" [(ngModel)]="newAdmin.email" name="email" required pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|vn|net|org|edu|gov|io|biz|info)$" #addEmail="ngModel" class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors" [ngClass]="{'border-red-500': addEmail.invalid && (addEmail.dirty || addEmail.touched)}">
+              <p *ngIf="addEmail.invalid && (addEmail.dirty || addEmail.touched)" class="text-red-500 text-xs mt-1">Email không hợp lệ (VD: @gmail.com)</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Mật khẩu khởi tạo <span class="text-red-500">*</span></label>
-              <input type="password" [(ngModel)]="newAdmin.password" name="password" required class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors">
+              <div class="relative">
+                <input [type]="showAddPassword() ? 'text' : 'password'" [(ngModel)]="newAdmin.password" name="password" required [pattern]="passwordRegex" #addPassword="ngModel" class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors pr-10" [ngClass]="{'border-red-500': addPassword.invalid && (addPassword.dirty || addPassword.touched)}">
+                <button type="button" (click)="toggleAddPassword()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none">
+                  <svg *ngIf="!showAddPassword()" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <svg *ngIf="showAddPassword()" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.978 9.978 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                </button>
+              </div>
+              <p *ngIf="addPassword.invalid && (addPassword.dirty || addPassword.touched)" class="text-red-500 text-xs mt-1">Mật khẩu phải bắt đầu bằng chữ hoa, có số, ký tự đặc biệt và dài tối thiểu 6 ký tự</p>
             </div>
 
             <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 dark:border-slate-700 mt-6">
@@ -228,11 +270,13 @@ interface PermissionGroup {
           <form (ngSubmit)="submitEditAdmin()" #editForm="ngForm" class="p-6 space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Họ và Tên <span class="text-red-500">*</span></label>
-              <input type="text" [(ngModel)]="editAdminData.fullName" name="fullName" required class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors">
+              <input type="text" [(ngModel)]="editAdminData.fullName" name="fullName" required [pattern]="fullNameRegex" #editFullName="ngModel" class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors" [ngClass]="{'border-red-500': editFullName.invalid && (editFullName.dirty || editFullName.touched)}">
+              <p *ngIf="editFullName.invalid && (editFullName.dirty || editFullName.touched)" class="text-red-500 text-xs mt-1">Họ tên không được chứa số và ký tự đặc biệt</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Email</label>
-              <input type="email" [(ngModel)]="editAdminData.email" name="email" class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors">
+              <input type="email" [(ngModel)]="editAdminData.email" name="email" pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|vn|net|org|edu|gov|io|biz|info)$" #editEmail="ngModel" class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors" [ngClass]="{'border-red-500': editEmail.invalid && (editEmail.dirty || editEmail.touched)}">
+              <p *ngIf="editEmail.invalid && (editEmail.dirty || editEmail.touched)" class="text-red-500 text-xs mt-1">Email không hợp lệ (VD: @gmail.com)</p>
             </div>
             <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 dark:border-slate-700 mt-6">
               <button type="button" (click)="closeEditModal()" class="px-4 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">Hủy</button>
@@ -246,7 +290,8 @@ interface PermissionGroup {
       </div>
 
       <!-- Delete Confirm Modal -->
-      <div *ngIf="showDeleteConfirm()" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
+      <!-- Delete Admin Modal -->
+      <div *ngIf="showDeleteConfirm()" class="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-0">
         <div class="fixed inset-0 bg-gray-900/60 dark:bg-gray-900/80 backdrop-blur-sm transition-opacity" (click)="closeDeleteConfirm()"></div>
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden relative z-10 animate-fade-in-up border border-gray-100 dark:border-slate-700 p-6 text-center">
           <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4 text-red-600 dark:text-red-500">
@@ -258,7 +303,25 @@ interface PermissionGroup {
             <button type="button" (click)="closeDeleteConfirm()" class="px-5 py-2.5 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors w-full">Hủy</button>
             <button type="button" (click)="submitDeleteAdmin()" [disabled]="isDeleting()" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium shadow-sm transition-colors disabled:opacity-50 flex items-center justify-center w-full">
               <svg *ngIf="isDeleting()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-              Xóa ngay
+              Xóa
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Apply Role Modal -->
+      <div *ngIf="showApplyRoleConfirm()" class="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-0">
+        <div class="fixed inset-0 bg-gray-900/60 dark:bg-gray-900/80 backdrop-blur-sm transition-opacity" (click)="closeApplyRoleConfirm()"></div>
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden relative z-10 animate-fade-in-up border border-gray-100 dark:border-slate-700 p-6 text-center">
+          <div class="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-4 text-blue-600 dark:text-blue-500">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Áp dụng nhóm quyền</h3>
+          <p class="text-gray-500 dark:text-slate-400 mb-6">Bạn có muốn áp dụng các quyền từ nhóm <strong>"{{ roleToApply()?.name }}"</strong> cho người dùng này không? (Các quyền hiện tại sẽ bị ghi đè)</p>
+          <div class="flex justify-center gap-3">
+            <button type="button" (click)="closeApplyRoleConfirm()" class="px-5 py-2.5 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors w-full">Hủy</button>
+            <button type="button" (click)="submitApplyRole()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-colors w-full">
+              Áp dụng
             </button>
           </div>
         </div>
@@ -268,11 +331,15 @@ interface PermissionGroup {
 })
 export class PermissionManagerComponent implements OnInit {
   private adminService = inject(AdminService);
+  private roleService = inject(RoleService);
   private toastService = inject(ToastService);
   public authService = inject(AuthService);
 
   allUsers = signal<AdminResponse[]>([]);
+  allRoles = signal<Role[]>([]);
   searchQuery = signal<string>('');
+
+  expandedRoleId: number | null = null;
 
   filteredUsers = computed(() => {
     // Luôn ẩn tài khoản admin tổng có id = 1 (Tài khoản root tạo đầu tiên)
@@ -288,11 +355,26 @@ export class PermissionManagerComponent implements OnInit {
     );
   });
 
+  currentPermissions = signal<Set<string>>(new Set());
+  groups = PERMISSION_GROUPS;
+
+  toggleRole(roleId: number) {
+    if (this.expandedRoleId === roleId) {
+      this.expandedRoleId = null;
+    } else {
+      this.expandedRoleId = roleId;
+    }
+  }
+
   isLoading = signal(false);
   isSaving = signal(false);
   isAdding = signal(false);
   showSuccessMsg = signal(false);
   showAddModal = signal(false);
+  showAddPassword = signal(false);
+
+  fullNameRegex = '^[a-zA-Z_ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\\s]+$';
+  passwordRegex = '^[A-Z](?=.*[0-9])(?=.*[!@#$%^&*()_+{}\\[\\]:;"\'<>,.?/~`|\\\\-]).{5,}$';
 
   newAdmin = {
     fullName: '',
@@ -302,50 +384,50 @@ export class PermissionManagerComponent implements OnInit {
   };
 
   selectedUser = signal<AdminResponse | null>(null);
-  currentPermissions = signal<Set<string>>(new Set());
 
-  // Define Groups matching EXACTLY with BE database
-  groups: PermissionGroup[] = [
-    {
-      name: 'Quản lý Học sinh',
-      items: [
-        { code: 'student:read', label: 'Xem danh sách & chi tiết sinh viên' },
-        { code: 'student:create', label: 'Thêm mới sinh viên', implicitReads: ['student:read'] },
-        { code: 'student:update', label: 'Cập nhật thông tin sinh viên', implicitReads: ['student:read'] },
-        { code: 'student:delete', label: 'Xóa sinh viên', implicitReads: ['student:read'] },
-        { code: 'student_parent:assign', label: 'Gán phụ huynh cho sinh viên', implicitReads: ['student:read', 'parent:read'] },
-        { code: 'student_parent:remove', label: 'Hủy liên kết sinh viên - phụ huynh', implicitReads: ['student:read', 'parent:read'] }
-      ]
-    },
-    {
-      name: 'Quản lý Phụ huynh',
-      items: [
-        { code: 'parent:read', label: 'Xem danh sách & chi tiết phụ huynh' },
-        { code: 'parent:create', label: 'Thêm mới phụ huynh', implicitReads: ['parent:read'] },
-        { code: 'parent:update', label: 'Cập nhật thông tin phụ huynh', implicitReads: ['parent:read'] },
-        { code: 'parent:delete', label: 'Xóa phụ huynh', implicitReads: ['parent:read'] }
-      ]
-    },
-    {
-      name: 'Quản trị Hệ thống (Admin & Roles)',
-      items: [
-        { code: 'admin:read', label: 'Xem danh sách & chi tiết tài khoản Admin' },
-        { code: 'admin:create', label: 'Tạo mới tài khoản Admin', implicitReads: ['admin:read'] },
-        { code: 'admin:update', label: 'Cập nhật thông tin Admin', implicitReads: ['admin:read'] },
-        { code: 'admin:delete', label: 'Xóa tài khoản Admin', implicitReads: ['admin:read'] },
-
-        { code: 'role:read', label: 'Xem danh sách Vai trò & Quyền mẫu' },
-        { code: 'role:manage', label: 'Tạo/sửa/xóa Role mẫu', implicitReads: ['role:read'] },
-
-        { code: 'admin_permission:assign', label: 'Cấp/Tước quyền trực tiếp của Admin', implicitReads: ['admin:read'] }
-      ]
-    }
-  ];
 
   ngOnInit() {
     if (this.authService.hasPermission('admin:read')) {
       this.loadUsers();
     }
+    if (this.authService.hasPermission('role:read')) {
+      this.loadRoles();
+    }
+  }
+
+  loadRoles() {
+    this.roleService.getRoles().subscribe({
+      next: (data) => {
+        this.allRoles.set(data);
+      },
+      error: () => {
+        this.toastService.error('Không thể tải danh sách Nhóm quyền');
+      }
+    });
+  }
+
+  showApplyRoleConfirm = signal<boolean>(false);
+  roleToApply = signal<Role | null>(null);
+
+  applyRole(role: Role) {
+    if (!this.selectedUser()) return;
+    this.roleToApply.set(role);
+    this.showApplyRoleConfirm.set(true);
+  }
+
+  closeApplyRoleConfirm() {
+    this.showApplyRoleConfirm.set(false);
+    this.roleToApply.set(null);
+  }
+
+  submitApplyRole() {
+    const role = this.roleToApply();
+    if (!role) return;
+
+    const permCodes = new Set(role.permissions.map(p => p.code) || []);
+    this.currentPermissions.set(permCodes);
+    this.closeApplyRoleConfirm();
+    this.toastService.success(`Đã áp dụng quyền từ nhóm ${role.name}. Vui lòng bấm Lưu thay đổi để xác nhận.`);
   }
 
   loadUsers() {
@@ -446,11 +528,16 @@ export class PermissionManagerComponent implements OnInit {
 
   openAddModal() {
     this.newAdmin = { fullName: '', username: '', email: '', password: '' };
+    this.showAddPassword.set(false);
     this.showAddModal.set(true);
   }
 
   closeAddModal() {
     this.showAddModal.set(false);
+  }
+
+  toggleAddPassword() {
+    this.showAddPassword.set(!this.showAddPassword());
   }
 
   submitAddAdmin() {
