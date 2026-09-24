@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, switchMap, forkJoin, of } from 'rxjs';
-import { Student, PaginatedResult } from '../models/student.model';
+import { Student } from '../models/student.model';
+import { PaginatedResult } from '../models/pagination.model';
 
 export interface StudentRequest {
   mhs: string;
@@ -82,7 +83,7 @@ export class StudentService {
             let valB = b[sortBy];
             if (typeof valA === 'string') valA = valA.toLowerCase();
             if (typeof valB === 'string') valB = valB.toLowerCase();
-            if (valA < valB) return sortDir === 'asc' ? -1 : 1; 
+            if (valA < valB) return sortDir === 'asc' ? -1 : 1;
             if (valA > valB) return sortDir === 'asc' ? 1 : -1;
             return 0;
           });

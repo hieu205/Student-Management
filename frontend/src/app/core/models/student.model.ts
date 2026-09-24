@@ -15,10 +15,3 @@ export interface LinkedParent extends Parent {
   relationshipType: string;
 }
 
-export interface PaginatedResult<T> {
-  items: T[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-}
-
