@@ -34,6 +34,7 @@ public class ChatService : IChatService
         {
             RoomId = roomId,
             SenderId = senderId,
+            ReceiverId = request.ReceiverId,
             Content = request.Content,
             IsRead = false,
             CreatedAt = DateTime.UtcNow
@@ -46,6 +47,7 @@ public class ChatService : IChatService
             Id = savedMsg.Id,
             RoomId = savedMsg.RoomId,
             SenderId = savedMsg.SenderId,
+            ReceiverId = savedMsg.ReceiverId,
             Content = savedMsg.Content,
             IsRead = savedMsg.IsRead,
             CreatedAt = savedMsg.CreatedAt
@@ -83,6 +85,7 @@ public class ChatService : IChatService
             Id = m.Id,
             RoomId = m.RoomId,
             SenderId = m.SenderId,
+            ReceiverId = m.ReceiverId,
             Content = m.Content,
             IsRead = m.IsRead,
             CreatedAt = m.CreatedAt
