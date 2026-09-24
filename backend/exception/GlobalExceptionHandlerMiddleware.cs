@@ -20,6 +20,10 @@ public class GlobalExceptionHandlerMiddleware
         {
             await _next(context);
         }
+        catch (Microsoft.AspNetCore.Http.BadHttpRequestException ex)
+        {
+            await HandleExceptionAsync(context, (HttpStatusCode)ex.StatusCode, "Yêu cầu không hợp lệ hoặc vượt giới hạn dung lượng");
+        }
         catch (AppException ex)
         {
             await HandleExceptionAsync(context, ex.StatusCode, ex.Message, ex.Errors);
@@ -57,4 +61,4 @@ public class GlobalExceptionHandlerMiddleware
         var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         return context.Response.WriteAsync(JsonSerializer.Serialize(response, jsonOptions));
     }
-}
+}

@@ -24,6 +24,7 @@ public class AppDbContext : DbContext
       // Khai báo các DbSet cho tính năng Chat
       public DbSet<ChatRoom> ChatRooms => Set<ChatRoom>();
       public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+      public DbSet<ChatAttachment> ChatAttachments => Set<ChatAttachment>();
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
       {
@@ -124,7 +125,12 @@ public class AppDbContext : DbContext
                   entity.Property(cm => cm.SenderId).HasColumnName("sender_id");
                   entity.Property(cm => cm.ReceiverId).HasColumnName("receiver_id");
                   entity.Property(cm => cm.Content).HasColumnName("content");
+                  entity.Property(cm => cm.ClientMessageId).HasColumnName("client_message_id");
+                  entity.HasIndex(cm => new { cm.SenderId, cm.ClientMessageId }).IsUnique()
+                        .HasFilter("client_message_id IS NOT NULL");
                   entity.Property(cm => cm.IsRead).HasColumnName("is_read");
+                  entity.Property(cm => cm.IsDeleted).HasColumnName("is_deleted");
+                  entity.Property(cm => cm.DeletedAt).HasColumnName("deleted_at");
                   entity.Property(cm => cm.CreatedAt).HasColumnName("created_at");
 
                   entity.HasOne(cm => cm.Room)
