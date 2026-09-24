@@ -149,7 +149,6 @@ import { PERMISSION_GROUPS, PermissionGroup, PermissionItem } from '../../core/c
                       </div>
                       <div class="ml-3">
                         <span class="block text-sm font-medium text-gray-900 dark:text-slate-200">{{ item.label }}</span>
-                        <span class="block text-xs text-gray-500 dark:text-slate-400 mt-0.5 font-mono">{{ item.code }}</span>
                       </div>
                     </label>
                   </div>

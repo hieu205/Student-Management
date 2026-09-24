@@ -22,8 +22,6 @@ export class ChatService {
 
   public isConnected = signal(false);
 
-  constructor() {}
-
   public startConnection() {
     const token = this.authService.getToken();
     if (!token) return;

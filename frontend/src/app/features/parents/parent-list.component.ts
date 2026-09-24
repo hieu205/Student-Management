@@ -208,9 +208,30 @@ import { ParentFormComponent } from './parent-form.component';
       <!-- Pagination (Tương tự Học sinh) -->
       <div class="px-6 py-4 border-t border-gray-100 dark:border-slate-700 flex items-center justify-between bg-gray-50 dark:bg-slate-900">
         <div class="flex-1 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p class="text-sm text-gray-600 dark:text-slate-300">
-            Tổng số <span class="font-medium">{{ totalCount() }}</span> phụ huynh
-          </p>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-slate-300">
+              Hiển thị <span class="font-medium">{{ parents().length }}</span> trên tổng số <span class="font-medium">{{ totalCount() }}</span> phụ huynh
+            </p>
+          </div>
+          <div>
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <button
+                [disabled]="currentPage() === 1"
+                (click)="changePage(currentPage() - 1)"
+                class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-medium text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                Trước
+              </button>
+              <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-slate-600 bg-blue-50 dark:bg-blue-900/20 text-sm font-medium text-blue-600 dark:text-blue-400">
+                {{ currentPage() }}
+              </button>
+              <button
+                [disabled]="parents().length < pageSize"
+                (click)="changePage(currentPage() + 1)"
+                class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-medium text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                Sau
+              </button>
+            </nav>
+          </div>
         </div>
       </div>
 
@@ -321,6 +342,13 @@ export class ParentListComponent implements OnInit {
   onSearchChange() {
     this.currentPage.set(1);
     this.loadParents();
+  }
+
+  changePage(page: number) {
+    if (page >= 1) {
+      this.currentPage.set(page);
+      this.loadParents();
+    }
   }
 
   toggleSort(column: string) {
