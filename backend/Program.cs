@@ -44,6 +44,17 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 
 // 👈 2. BỔ SUNG: Dịch vụ SignalR
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IUserIdProvider, ChatUserIdProvider>();
+builder.Services.AddOptions<ChatAttachmentOptions>()
+    .Bind(builder.Configuration.GetSection(ChatAttachmentOptions.SectionName))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.StoragePath) && o.MaxFiles > 0 && o.MaxFiles <= 100 &&
+        o.MaxFileBytes > 0 && o.MaxTotalBytes >= o.MaxFileBytes && o.MaxTotalBytes <= 1024L * 1024 * 1024 &&
+        o.PendingHours > 0 && o.PendingHours <= 8760 && o.MaxImagePixels > 0 && o.MaxImagePixels <= 100_000_000,
+        "Invalid chat attachment limits.")
+    .ValidateOnStart();
+builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+builder.Services.AddScoped<demo_dotnet.backend.Controllers.ChatUploadLimitsFilter>();
+builder.Services.AddHostedService<ChatAttachmentCleanupService>();
 
 // 3. CONTROLLERS & VALIDATION RESPONSE FORMAT
 builder.Services.AddControllers()
@@ -106,7 +117,8 @@ builder.Services.AddAuthentication(options =>
         {
             var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
-            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
+            if (!string.IsNullOrEmpty(accessToken) && 
+                (path.StartsWithSegments("/hubs/chat") || path.StartsWithSegments("/api/v1/chat/attachments")))
             {
                 context.Token = accessToken;
             }
@@ -123,14 +135,11 @@ builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProv
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontendPolicy", policy =>
-
     {
-
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:4200")
-        // policy.SetIsOriginAllowed(origin => true)
-       .AllowAnyHeader()
-       .AllowAnyMethod()
-       .AllowCredentials(); // Đã có sẵn, bắt buộc cho SignalR
+        policy.SetIsOriginAllowed(origin => true)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 

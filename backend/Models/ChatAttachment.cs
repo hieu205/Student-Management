@@ -1,0 +1,20 @@
+namespace backend.Models;
+
+public enum AttachmentStatus { Pending, Attached, Deleting }
+
+public class ChatAttachment
+{
+    public Guid Id { get; set; }
+    public long? MessageId { get; set; }
+    public ChatMessage? Message { get; set; }
+    public int UploaderId { get; set; }
+    public int ReceiverId { get; set; }
+    public string OriginalFileName { get; set; } = string.Empty;
+    public string StorageKey { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
+    public long SizeBytes { get; set; }
+    public string Kind { get; set; } = "File";
+    public AttachmentStatus Status { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+}
