@@ -131,3 +131,85 @@ CREATE INDEX idx_chat_room_updated_at ON chat_room (updated_at DESC);
 
 CREATE INDEX idx_chat_message_room_created ON chat_message (room_id, created_at DESC);
 CREATE INDEX idx_chat_message_unread ON chat_message (room_id, sender_id, is_read) WHERE is_read = FALSE;
+
+-- ============================================
+-- NÂNG CẤP DATABASE ĐÃ TỒN TẠI: Tệp đính kèm chat
+-- Chạy các lệnh từ BEGIN đến COMMIT trên DB đã chạy phần SQL bên trên.
+-- ============================================
+
+BEGIN;
+
+-- Model ChatMessage đã có ReceiverId nhưng schema cũ chưa có receiver_id.
+ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS receiver_id INT;
+
+-- Suy ra người nhận của các tin nhắn cũ từ hai thành viên trong phòng.
+UPDATE chat_message AS message
+SET receiver_id = CASE
+    WHEN message.sender_id = room.admin1_id THEN room.admin2_id
+    ELSE room.admin1_id
+END
+FROM chat_room AS room
+WHERE message.room_id = room.id
+  AND message.receiver_id IS NULL
+  AND message.sender_id IN (room.admin1_id, room.admin2_id);
+
+-- Dừng migration nếu còn dữ liệu cũ không thể xác định người nhận.
+ALTER TABLE chat_message ALTER COLUMN receiver_id SET NOT NULL;
+
+-- Chỉ thêm foreign key nếu database chưa có foreign key cho receiver_id.
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint AS constraint_info
+        JOIN pg_attribute AS column_info
+          ON column_info.attrelid = constraint_info.conrelid
+         AND column_info.attnum = ANY(constraint_info.conkey)
+        WHERE constraint_info.conrelid = 'chat_message'::regclass
+          AND constraint_info.contype = 'f'
+          AND column_info.attname = 'receiver_id'
+    ) THEN
+        ALTER TABLE chat_message
+        ADD CONSTRAINT fk_chat_message_receiver
+        FOREIGN KEY (receiver_id) REFERENCES admin(id) ON DELETE RESTRICT;
+    END IF;
+END $$;
+
+-- Mã do frontend tạo để retry không sinh tin nhắn trùng.
+ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS client_message_id UUID;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_chat_message_sender_client
+    ON chat_message (sender_id, client_message_id)
+    WHERE client_message_id IS NOT NULL;
+
+-- Nội dung file nằm trên local storage; bảng chỉ lưu metadata và trạng thái.
+CREATE TABLE IF NOT EXISTS chat_attachment (
+    id                 UUID PRIMARY KEY,
+    message_id         BIGINT REFERENCES chat_message(id) ON DELETE RESTRICT,
+    uploader_id        INT NOT NULL REFERENCES admin(id) ON DELETE RESTRICT,
+    receiver_id        INT NOT NULL REFERENCES admin(id) ON DELETE RESTRICT,
+    original_file_name VARCHAR(255) NOT NULL,
+    storage_key        VARCHAR(32) NOT NULL,
+    content_type       VARCHAR(150) NOT NULL,
+    size_bytes         BIGINT NOT NULL CHECK (size_bytes > 0),
+    kind               VARCHAR(10) NOT NULL CHECK (kind IN ('Image', 'File')),
+    status             VARCHAR(10) NOT NULL,
+    created_at         TIMESTAMP NOT NULL DEFAULT NOW(),
+    expires_at         TIMESTAMP,
+    CONSTRAINT ck_chat_attachment_state CHECK (
+        (status = 'Pending' AND message_id IS NULL AND expires_at IS NOT NULL)
+        OR (status = 'Attached' AND message_id IS NOT NULL AND expires_at IS NULL)
+        OR (status = 'Deleting' AND message_id IS NULL)
+    )
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_chat_attachment_storage
+    ON chat_attachment (storage_key);
+CREATE INDEX IF NOT EXISTS ix_chat_attachment_message
+    ON chat_attachment (message_id);
+CREATE INDEX IF NOT EXISTS ix_chat_attachment_uploader
+    ON chat_attachment (uploader_id);
+CREATE INDEX IF NOT EXISTS ix_chat_attachment_cleanup
+    ON chat_attachment (status, expires_at);
+
+COMMIT;
