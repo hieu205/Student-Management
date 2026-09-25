@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import * as signalR from '@microsoft/signalr';
 import { AuthService } from '../auth/auth.service';
-import { ChatRoom, ChatMessage, SendMessageRequest } from '../models/chat.model';
+import { ChatRoom, ChatMessage, SendMessageRequest, ChatAttachment } from '../models/chat.model';
 import { Observable, Subject } from 'rxjs';
 
 @Injectable({
@@ -19,6 +19,9 @@ export class ChatService {
   // Observable to emit received messages to components
   private messageReceivedSource = new Subject<ChatMessage>();
   public messageReceived$ = this.messageReceivedSource.asObservable();
+
+  private messageDeletedSource = new Subject<{messageId: number, roomId: number}>();
+  public messageDeleted$ = this.messageDeletedSource.asObservable();
 
   public isConnected = signal(false);
 
@@ -63,6 +66,10 @@ export class ChatService {
     this.hubConnection?.on('ReceiveMessage', (message: ChatMessage) => {
       this.messageReceivedSource.next(message);
     });
+
+    this.hubConnection?.on('MessageDeleted', (data: {messageId: number, roomId: number}) => {
+      this.messageDeletedSource.next(data);
+    });
   }
 
   public sendMessageRealtime(request: SendMessageRequest): Promise<void> {
@@ -81,8 +88,29 @@ export class ChatService {
     return this.http.get<ChatMessage[]>(`${this.apiUrl}/rooms/${roomId}/messages?page=${page}&pageSize=${pageSize}`);
   }
 
+  public searchMessages(roomId: number, query: string, page: number = 1, pageSize: number = 50): Observable<ChatMessage[]> {
+    return this.http.get<ChatMessage[]>(`${this.apiUrl}/rooms/${roomId}/search?query=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`);
+  }
+
   public markAsRead(roomId: number): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/rooms/${roomId}/read`, {});
   }
-}
 
+  public uploadAttachments(receiverId: number, files: File[]): Observable<ChatAttachment[]> {
+    const formData = new FormData();
+    formData.append('receiverId', receiverId.toString());
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+
+    return this.http.post<ChatAttachment[]>(`${this.apiUrl}/attachments`, formData);
+  }
+
+  public deletePendingAttachment(attachmentId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/attachments/${attachmentId}`);
+  }
+
+  public deleteMessage(messageId: number): Observable<ChatMessage> {
+    return this.http.delete<ChatMessage>(`${this.apiUrl}/messages/${messageId}`);
+  }
+}
