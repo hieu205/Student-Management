@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using demo_dotnet.backend.DTOs.request;
-using demo_dotnet.backend.Services;
-using demo_dotnet.backend.Services.Interface;
+using demo_dotnet.backend.DTOs.response;
+using demo_dotnet.backend.exception;
+using demo_dotnet.backend.Security;
 using demo_dotnet.backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -9,30 +9,59 @@ using Microsoft.AspNetCore.SignalR;
 namespace demo_dotnet.backend.Hubs;
 
 [Authorize]
-public class ChatHub : Hub
+public class ChatHub(IChatService chatService, ILogger<ChatHub> logger) : Hub
 {
-    private readonly IChatService _chatService;
-
-    public ChatHub(IChatService chatService)
+    public async Task<ChatMessageResponse> SendMessage(SendMessageRequest request)
     {
-        _chatService = chatService;
+        ChatMessageResponse message;
+        try
+        {
+            var senderId = ChatIdentity.GetAdminId(Context.User);
+            message = await chatService.SaveMessageAsync(senderId, request);
+        }
+        catch (AppException ex) { throw new HubException($"CHAT_{(int)ex.StatusCode}: {ex.Message}"); }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to save chat message.");
+            throw new HubException("CHAT_500: Không thể lưu tin nhắn.");
+        }
+
+        try
+        {
+            await Clients.Users(message.SenderId.ToString(), message.ReceiverId.ToString())
+                .SendAsync("ReceiveMessage", message);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Realtime delivery failed for message {MessageId}.", message.Id);
+        }
+        return message;
     }
 
-    public async Task SendMessage(SendMessageRequest request)
+    public async Task<ChatMessageResponse> DeleteMessage(long messageId)
     {
-        var senderClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                       ?? Context.User?.FindFirst("id")?.Value;
+        ChatMessageResponse message;
+        try
+        {
+            var currentAdminId = ChatIdentity.GetAdminId(Context.User);
+            message = await chatService.SoftDeleteMessageAsync(messageId, currentAdminId);
+        }
+        catch (AppException ex) { throw new HubException($"CHAT_{(int)ex.StatusCode}: {ex.Message}"); }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to delete chat message {MessageId}.", messageId);
+            throw new HubException("CHAT_500: Không thể xóa tin nhắn.");
+        }
 
-        if (string.IsNullOrEmpty(senderClaim) || !long.TryParse(senderClaim, out long senderId))
-            return;
-
-        if (senderId == request.ReceiverId)
-            return; // Khong cho phep tu chat voi chinh minh
-
-        var messageDto = await _chatService.SaveMessageAsync((int)senderId, request);
-
-        // Gửi realtime cho Admin nhận và Admin gửi
-        await Clients.User(request.ReceiverId.ToString()).SendAsync("ReceiveMessage", messageDto);
-        await Clients.User(senderId.ToString()).SendAsync("ReceiveMessage", messageDto);
+        try
+        {
+            await Clients.Users(message.SenderId.ToString(), message.ReceiverId.ToString())
+                .SendAsync("MessageDeleted", new { messageId = message.Id, roomId = message.RoomId });
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Realtime delete broadcast failed for message {MessageId}.", message.Id);
+        }
+        return message;
     }
 }

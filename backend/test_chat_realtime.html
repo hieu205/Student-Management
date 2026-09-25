@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Real-time Chat, Search & Attachment Test Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 flex flex-col font-sans">
+
+  <!-- Header -->
+  <header class="max-w-7xl mx-auto w-full mb-4 flex items-center justify-between bg-slate-800/80 backdrop-blur p-4 rounded-2xl border border-slate-700 shadow-xl">
+    <div class="flex items-center gap-3">
+      <div class="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/30">
+        <i class="fa-solid fa-comments"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-lg text-white">SignalR Real-time Chat Studio</h1>
+        <p class="text-xs text-slate-400">Kiểm thử: Gửi tin nhắn, Tệp đính kèm, Tìm kiếm tin nhắn & Xóa mềm / Thu hồi 2 phía</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="text-xs text-slate-400 bg-slate-700/60 px-3 py-1.5 rounded-lg border border-slate-600">
+        <i class="fa-solid fa-server mr-1 text-emerald-400"></i> Backend API: <strong class="text-white">http://localhost:5075</strong>
+      </span>
+    </div>
+  </header>
+
+  <!-- Main Dual Panel Grid -->
+  <main class="max-w-7xl mx-auto w-full flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4">
+    
+    <!-- CLIENT 1 (Admin A) -->
+    <section class="bg-slate-800 rounded-2xl border border-slate-700 flex flex-col overflow-hidden shadow-2xl" id="client1">
+      <!-- Top Bar -->
+      <div class="p-3 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-red-500 shadow status-dot" id="c1-status-dot"></div>
+          <span class="font-semibold text-sm text-white" id="c1-user-display">Client 1 (Chưa đăng nhập)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-400" id="c1-status-text">Disconnected</span>
+        </div>
+      </div>
+
+      <!-- Auth Form (visible if not logged in) -->
+      <div id="c1-auth-box" class="p-4 bg-slate-850 border-b border-slate-700 space-y-3">
+        <div class="grid grid-cols-2 gap-2">
+          <input type="text" id="c1-username" placeholder="Username (vd: admin)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-indigo-500" value="admin">
+          <input type="password" id="c1-password" placeholder="Password" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-indigo-500" value="123456">
+        </div>
+        <div class="flex items-center justify-between">
+          <button onclick="loginClient(1)" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg text-sm transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập Client 1
+          </button>
+        </div>
+      </div>
+
+      <!-- Partner Selector & Search Bar -->
+      <div id="c1-partner-box" class="hidden px-4 py-2 bg-slate-850/50 border-b border-slate-700 space-y-2 text-xs">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400">Gửi đến Admin ID:</span>
+            <input type="number" id="c1-receiver-id" onchange="loadChatHistory(1)" placeholder="Receiver Admin ID" class="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-center font-bold" value="2">
+          </div>
+          <button onclick="loadChatHistory(1)" class="text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium" title="Tải lại toàn bộ lịch sử tin nhắn cũ từ CSDL">
+            <i class="fa-solid fa-arrows-rotate"></i> Tải lịch sử
+          </button>
+        </div>
+
+        <!-- Search Box -->
+        <div class="flex items-center gap-2 pt-1 border-t border-slate-700/50">
+          <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-500"></i>
+            <input type="text" id="c1-search-input" placeholder="Tìm kiếm tin nhắn trong phòng..." 
+                   class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white outline-none focus:border-indigo-500"
+                   onkeydown="if(event.key==='Enter') searchMessages(1)">
+          </div>
+          <button onclick="searchMessages(1)" class="bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg text-slate-200 font-medium transition">
+            Tìm
+          </button>
+          <button onclick="clearSearch(1)" class="text-slate-400 hover:text-slate-300 px-1" title="Xóa kết quả tìm kiếm">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Chat Messages Window -->
+      <div class="flex-1 p-4 overflow-y-auto space-y-3 custom-scroll min-h-[300px] max-h-[420px] bg-slate-900/40" id="c1-messages">
+        <div class="text-center text-xs text-slate-500 my-8">Hãy đăng nhập để bắt đầu trò chuyện</div>
+      </div>
+
+      <!-- Pending Attachments Preview Strip -->
+      <div id="c1-pending-strip" class="hidden px-4 py-2 bg-slate-850 border-t border-slate-700 flex flex-wrap gap-2"></div>
+
+      <!-- Chat Input Toolbar & Form -->
+      <div id="c1-input-box" class="p-3 bg-slate-800 border-t border-slate-700 opacity-50 pointer-events-none">
+        <div class="flex items-center gap-2">
+          <!-- Attachment Button -->
+          <label class="cursor-pointer text-slate-400 hover:text-indigo-400 p-2 rounded-lg hover:bg-slate-700 transition" title="Đính kèm tệp">
+            <i class="fa-solid fa-paperclip text-lg"></i>
+            <input type="file" multiple id="c1-file-input" onchange="handleFileSelect(1)" class="hidden" accept="image/jpeg,image/png,image/webp,application/pdf,.docx,.xlsx,.txt">
+          </label>
+
+          <input type="text" id="c1-input-text" placeholder="Nhập tin nhắn..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-indigo-500 transition" onkeydown="if(event.key==='Enter') sendMessage(1)">
+
+          <button onclick="sendMessage(1)" id="c1-send-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white w-10 h-10 rounded-xl flex items-center justify-center transition shadow-lg shadow-indigo-600/30">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLIENT 2 (Admin B) -->
+    <section class="bg-slate-800 rounded-2xl border border-slate-700 flex flex-col overflow-hidden shadow-2xl" id="client2">
+      <!-- Top Bar -->
+      <div class="p-3 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-red-500 shadow status-dot" id="c2-status-dot"></div>
+          <span class="font-semibold text-sm text-white" id="c2-user-display">Client 2 (Chưa đăng nhập)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-400" id="c2-status-text">Disconnected</span>
+        </div>
+      </div>
+
+      <!-- Auth Form -->
+      <div id="c2-auth-box" class="p-4 bg-slate-850 border-b border-slate-700 space-y-3">
+        <div class="grid grid-cols-2 gap-2">
+          <input type="text" id="c2-username" placeholder="Username (vd: admin2)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-emerald-500" value="admin2">
+          <input type="password" id="c2-password" placeholder="Password" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-emerald-500" value="123456">
+        </div>
+        <div class="flex items-center justify-between">
+          <button onclick="loginClient(2)" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg text-sm transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập Client 2
+          </button>
+        </div>
+      </div>
+
+      <!-- Partner Selector & Search Bar -->
+      <div id="c2-partner-box" class="hidden px-4 py-2 bg-slate-850/50 border-b border-slate-700 space-y-2 text-xs">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400">Gửi đến Admin ID:</span>
+            <input type="number" id="c2-receiver-id" onchange="loadChatHistory(2)" placeholder="Receiver Admin ID" class="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-center font-bold" value="1">
+          </div>
+          <button onclick="loadChatHistory(2)" class="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium" title="Tải lại toàn bộ lịch sử tin nhắn cũ từ CSDL">
+            <i class="fa-solid fa-arrows-rotate"></i> Tải lịch sử
+          </button>
+        </div>
+
+        <!-- Search Box -->
+        <div class="flex items-center gap-2 pt-1 border-t border-slate-700/50">
+          <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-500"></i>
+            <input type="text" id="c2-search-input" placeholder="Tìm kiếm tin nhắn trong phòng..." 
+                   class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white outline-none focus:border-emerald-500"
+                   onkeydown="if(event.key==='Enter') searchMessages(2)">
+          </div>
+          <button onclick="searchMessages(2)" class="bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg text-slate-200 font-medium transition">
+            Tìm
+          </button>
+          <button onclick="clearSearch(2)" class="text-slate-400 hover:text-slate-300 px-1" title="Xóa kết quả tìm kiếm">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Chat Messages Window -->
+      <div class="flex-1 p-4 overflow-y-auto space-y-3 custom-scroll min-h-[300px] max-h-[420px] bg-slate-900/40" id="c2-messages">
+        <div class="text-center text-xs text-slate-500 my-8">Hãy đăng nhập để bắt đầu trò chuyện</div>
+      </div>
+
+      <!-- Pending Attachments Preview Strip -->
+      <div id="c2-pending-strip" class="hidden px-4 py-2 bg-slate-850 border-t border-slate-700 flex flex-wrap gap-2"></div>
+
+      <!-- Chat Input Toolbar & Form -->
+      <div id="c2-input-box" class="p-3 bg-slate-800 border-t border-slate-700 opacity-50 pointer-events-none">
+        <div class="flex items-center gap-2">
+          <label class="cursor-pointer text-slate-400 hover:text-emerald-400 p-2 rounded-lg hover:bg-slate-700 transition" title="Đính kèm tệp">
+            <i class="fa-solid fa-paperclip text-lg"></i>
+            <input type="file" multiple id="c2-file-input" onchange="handleFileSelect(2)" class="hidden" accept="image/jpeg,image/png,image/webp,application/pdf,.docx,.xlsx,.txt">
+          </label>
+
+          <input type="text" id="c2-input-text" placeholder="Nhập tin nhắn..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-emerald-500 transition" onkeydown="if(event.key==='Enter') sendMessage(2)">
+
+          <button onclick="sendMessage(2)" id="c2-send-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white w-10 h-10 rounded-xl flex items-center justify-center transition shadow-lg shadow-emerald-600/30">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const API_BASE = 'http://localhost:5075';
+    const HUB_URL = `${API_BASE}/hubs/chat`;
+
+    const state = {
+      1: { token: null, user: null, hub: null, pendingAttachments: [], currentRoomId: 0 },
+      2: { token: null, user: null, hub: null, pendingAttachments: [], currentRoomId: 0 }
+    };
+
+    function uuidv4() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    // 1. Đăng nhập
+    async function loginClient(clientId) {
+      const username = document.getElementById(`c${clientId}-username`).value.trim();
+      const password = document.getElementById(`c${clientId}-password`).value.trim();
+
+      if (!username || !password) return alert('Vui lòng nhập tài khoản và mật khẩu!');
+
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/Auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          return alert(`Đăng nhập thất bại: ${err.message || res.statusText}`);
+        }
+
+        const data = await res.json();
+        state[clientId].token = data.accessToken;
+        state[clientId].user = data.admin;
+
+        // Cập nhật giao diện
+        document.getElementById(`c${clientId}-user-display`).innerHTML = `
+          <span class="text-white font-bold">${data.admin.fullName || data.admin.username}</span> 
+          <span class="text-xs text-indigo-400">(ID: ${data.admin.id})</span>
+        `;
+        document.getElementById(`c${clientId}-auth-box`).classList.add('hidden');
+        document.getElementById(`c${clientId}-partner-box`).classList.remove('hidden');
+        document.getElementById(`c${clientId}-input-box`).classList.remove('opacity-50', 'pointer-events-none');
+        document.getElementById(`c${clientId}-messages`).innerHTML = '';
+
+        // Tự động gán người nhận đối diện nếu có
+        const otherId = clientId === 1 ? 2 : 1;
+        if (state[otherId].user) {
+          document.getElementById(`c${clientId}-receiver-id`).value = state[otherId].user.id;
+          document.getElementById(`c${otherId}-receiver-id`).value = data.admin.id;
+        }
+
+        // Kết nối SignalR
+        connectSignalR(clientId);
+
+        // Tự động tải lại lịch sử tin nhắn cũ từ CSDL
+        await loadChatHistory(clientId);
+        if (state[otherId].user) {
+          await loadChatHistory(otherId);
+        }
+
+      } catch (err) {
+        console.error(err);
+        alert('Không thể kết nối máy chủ backend!');
+      }
+    }
+
+    // 2. Kết nối SignalR Hub
+    function connectSignalR(clientId) {
+      const token = state[clientId].token;
+      const statusDot = document.getElementById(`c${clientId}-status-dot`);
+      const statusText = document.getElementById(`c${clientId}-status-text`);
+
+      statusDot.className = 'w-3 h-3 rounded-full bg-yellow-500 shadow animate-pulse';
+      statusText.innerText = 'Connecting...';
+
+      const hub = new signalR.HubConnectionBuilder()
+        .withUrl(HUB_URL, { accessTokenFactory: () => token })
+        .withAutomaticReconnect()
+        .build();
+
+      state[clientId].hub = hub;
+
+      hub.on('ReceiveMessage', (message) => {
+        appendMessage(clientId, message);
+      });
+
+      // Lắng nghe sự kiện thu hồi/xóa tin nhắn realtime
+      hub.on('MessageDeleted', (data) => {
+        handleMessageDeletedRealtime(clientId, data.messageId);
+      });
+
+      hub.start()
+        .then(() => {
+          statusDot.className = 'w-3 h-3 rounded-full bg-emerald-500 shadow';
+          statusText.innerText = 'Connected';
+        })
+        .catch((err) => {
+          console.error(err);
+          statusDot.className = 'w-3 h-3 rounded-full bg-red-500 shadow';
+          statusText.innerText = 'Connection Error';
+        });
+
+      hub.onreconnecting(() => {
+        statusDot.className = 'w-3 h-3 rounded-full bg-yellow-500 shadow animate-pulse';
+        statusText.innerText = 'Reconnecting...';
+      });
+
+      hub.onreconnected(() => {
+        statusDot.className = 'w-3 h-3 rounded-full bg-emerald-500 shadow';
+        statusText.innerText = 'Connected';
+      });
+    }
+
+    // 3. Tải toàn bộ lịch sử tin nhắn cũ từ CSDL
+    async function loadChatHistory(clientId) {
+      if (!state[clientId].token || !state[clientId].user) return;
+      const receiverId = parseInt(document.getElementById(`c${clientId}-receiver-id`).value);
+      if (!receiverId) return;
+
+      const container = document.getElementById(`c${clientId}-messages`);
+      container.innerHTML = '<div class="text-center text-xs text-slate-400 my-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang tải lịch sử tin nhắn...</div>';
+
+      try {
+        const resRooms = await fetch(`${API_BASE}/api/v1/chat/rooms`, {
+          headers: { 'Authorization': `Bearer ${state[clientId].token}` }
+        });
+        if (!resRooms.ok) throw new Error('Không thể lấy danh sách phòng');
+        const rooms = await resRooms.json();
+        const currentRoom = rooms.find(r => r.partnerId === receiverId);
+
+        if (!currentRoom || !currentRoom.roomId) {
+          state[clientId].currentRoomId = 0;
+          container.innerHTML = '<div class="text-center text-xs text-slate-500 my-8">Chưa có lịch sử tin nhắn giữa 2 Admin này.</div>';
+          return;
+        }
+
+        state[clientId].currentRoomId = currentRoom.roomId;
+
+        const resMsgs = await fetch(`${API_BASE}/api/v1/chat/rooms/${currentRoom.roomId}/messages?page=1&pageSize=50`, {
+          headers: { 'Authorization': `Bearer ${state[clientId].token}` }
+        });
+        if (!resMsgs.ok) throw new Error('Không thể tải tin nhắn');
+        const messages = await resMsgs.json();
+
+        container.innerHTML = '';
+        if (messages.length === 0) {
+          container.innerHTML = '<div class="text-center text-xs text-slate-500 my-8">Chưa có tin nhắn nào.</div>';
+          return;
+        }
+
+        for (const msg of messages) {
+          appendMessage(clientId, msg);
+        }
+      } catch (err) {
+        console.error('Lỗi tải lịch sử:', err);
+        container.innerHTML = '<div class="text-center text-xs text-red-400 my-4">Lỗi khi tải lịch sử tin nhắn!</div>';
+      }
+    }
+
+    // 4. Tìm kiếm tin nhắn theo Text
+    async function searchMessages(clientId) {
+      const q = document.getElementById(`c${clientId}-search-input`).value.trim();
+      if (!q) return loadChatHistory(clientId);
+
+      const roomId = state[clientId].currentRoomId;
+      if (!roomId) return alert('Chưa xác định phòng chat để tìm kiếm!');
+
+      const container = document.getElementById(`c${clientId}-messages`);
+      container.innerHTML = `<div class="text-center text-xs text-slate-400 my-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang tìm kiếm "${q}"...</div>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/chat/rooms/${roomId}/search?query=${encodeURIComponent(q)}&page=1&pageSize=50`, {
+          headers: { 'Authorization': `Bearer ${state[clientId].token}` }
+        });
+
+        if (!res.ok) throw new Error('Tìm kiếm thất bại');
+        const results = await res.json();
+
+        container.innerHTML = `
+          <div class="p-2 bg-indigo-900/30 border border-indigo-700/50 rounded-lg text-xs text-indigo-300 flex justify-between items-center mb-2">
+            <span>Kết quả tìm kiếm cho: <strong>"${q}"</strong> (${results.length} tin nhắn)</span>
+            <button onclick="clearSearch(${clientId})" class="underline hover:text-white">Xem tất cả</button>
+          </div>
+        `;
+
+        if (results.length === 0) {
+          container.innerHTML += '<div class="text-center text-xs text-slate-500 my-8">Không tìm thấy tin nhắn nào phù hợp.</div>';
+          return;
+        }
+
+        for (const msg of results) {
+          appendMessage(clientId, msg);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Lỗi khi thực hiện tìm kiếm tin nhắn!');
+      }
+    }
+
+    function clearSearch(clientId) {
+      document.getElementById(`c${clientId}-search-input`).value = '';
+      loadChatHistory(clientId);
+    }
+
+    // 5. Xử lý Upload file đính kèm
+    async function handleFileSelect(clientId) {
+      const fileInput = document.getElementById(`c${clientId}-file-input`);
+      const files = Array.from(fileInput.files);
+      if (files.length === 0) return;
+
+      const receiverId = parseInt(document.getElementById(`c${clientId}-receiver-id`).value);
+      if (!receiverId) return alert('Vui lòng nhập ID người nhận!');
+
+      const formData = new FormData();
+      formData.append('receiverId', receiverId);
+      files.forEach(f => formData.append('files', f));
+
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/chat/attachments`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${state[clientId].token}`
+          },
+          body: formData
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          return alert(`Lỗi upload: ${err.message || res.statusText}`);
+        }
+
+        const uploadedList = await res.json();
+        state[clientId].pendingAttachments.push(...uploadedList);
+        renderPendingStrip(clientId);
+        fileInput.value = '';
+
+      } catch (err) {
+        console.error(err);
+        alert('Lỗi mạng khi upload file!');
+      }
+    }
+
+    function renderPendingStrip(clientId) {
+      const strip = document.getElementById(`c${clientId}-pending-strip`);
+      const list = state[clientId].pendingAttachments;
+
+      if (list.length === 0) {
+        strip.classList.add('hidden');
+        strip.innerHTML = '';
+        return;
+      }
+
+      strip.classList.remove('hidden');
+      strip.innerHTML = list.map((item, idx) => `
+        <div class="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs">
+          <i class="${item.kind === 'Image' ? 'fa-solid fa-image text-emerald-400' : 'fa-solid fa-file text-blue-400'}"></i>
+          <span class="max-w-[120px] truncate text-slate-200" title="${item.fileName}">${item.fileName}</span>
+          <button onclick="removePendingAttachment(${clientId}, ${idx})" class="text-rose-400 hover:text-rose-300 ml-1">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    async function removePendingAttachment(clientId, index) {
+      const item = state[clientId].pendingAttachments[index];
+      if (item) {
+        try {
+          await fetch(`${API_BASE}/api/v1/chat/attachments/${item.id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${state[clientId].token}` }
+          });
+        } catch(e) {}
+        state[clientId].pendingAttachments.splice(index, 1);
+        renderPendingStrip(clientId);
+      }
+    }
+
+    // 6. Gửi tin nhắn qua SignalR
+    async function sendMessage(clientId) {
+      const input = document.getElementById(`c${clientId}-input-text`);
+      const content = input.value.trim();
+      const receiverId = parseInt(document.getElementById(`c${clientId}-receiver-id`).value);
+      const attachmentIds = state[clientId].pendingAttachments.map(a => a.id);
+
+      if (!content && attachmentIds.length === 0) return;
+      if (!receiverId) return alert('Vui lòng nhập ID người nhận!');
+
+      const hub = state[clientId].hub;
+      if (!hub || hub.state !== signalR.HubConnectionState.Connected) {
+        return alert('SignalR chưa kết nối thành công!');
+      }
+
+      const payload = {
+        receiverId: receiverId,
+        content: content,
+        attachmentIds: attachmentIds,
+        clientMessageId: uuidv4()
+      };
+
+      try {
+        await hub.invoke('SendMessage', payload);
+        input.value = '';
+        state[clientId].pendingAttachments = [];
+        renderPendingStrip(clientId);
+      } catch (err) {
+        console.error('Lỗi khi gửi tin nhắn:', err);
+        alert(`Lỗi gửi: ${err.message || err}`);
+      }
+    }
+
+    // 7. Xóa mềm / Thu hồi tin nhắn ở 2 phía
+    async function deleteMessage(clientId, messageId) {
+      if (!confirm('Bạn có chắc chắn muốn thu hồi tin nhắn này ở cả 2 phía không?')) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/chat/messages/${messageId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${state[clientId].token}` }
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          return alert(`Lỗi: ${err.message || res.statusText}`);
+        }
+
+        // Cập nhật UI ngay tại client gửi
+        handleMessageDeletedRealtime(clientId, messageId);
+
+      } catch (err) {
+        console.error(err);
+        alert('Lỗi mạng khi thu hồi tin nhắn!');
+      }
+    }
+
+    // 8. Cập nhật giao diện khi tin nhắn bị thu hồi realtime
+    function handleMessageDeletedRealtime(clientId, messageId) {
+      const el = document.getElementById(`msg-box-${clientId}-${messageId}`);
+      if (el) {
+        el.innerHTML = `
+          <p class="text-xs italic text-slate-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-ban text-[10px]"></i> Tin nhắn đã bị thu hồi
+          </p>
+        `;
+        el.className = 'max-w-[80%] rounded-2xl px-4 py-2 shadow-sm bg-slate-800/80 border border-slate-700/80 text-slate-400';
+        
+        // Ẩn nút xóa nếu có
+        const btn = document.getElementById(`del-btn-${clientId}-${messageId}`);
+        if (btn) btn.remove();
+      }
+    }
+
+    // 9. Hiển thị tin nhắn nhận được
+    function appendMessage(clientId, message) {
+      const container = document.getElementById(`c${clientId}-messages`);
+      const isMe = message.senderId === state[clientId].user.id;
+
+      // Cập nhật currentRoomId nếu chưa có
+      if (message.roomId) {
+        state[clientId].currentRoomId = message.roomId;
+      }
+
+      // Tránh append trùng nếu phần tử đã tồn tại
+      const existing = document.getElementById(`msg-wrap-${clientId}-${message.id}`);
+      if (existing) {
+        existing.remove();
+      }
+
+      const msgWrap = document.createElement('div');
+      msgWrap.id = `msg-wrap-${clientId}-${message.id}`;
+      msgWrap.className = `flex flex-col group ${isMe ? 'items-end' : 'items-start'}`;
+
+      let attachmentsHtml = '';
+      if (!message.isDeleted && message.attachments && message.attachments.length > 0) {
+        attachmentsHtml = '<div class="mt-2 space-y-2">';
+        for (const att of message.attachments) {
+          if (att.kind === 'Image') {
+            const previewUrl = `${API_BASE}${att.downloadUrl}?access_token=${state[clientId].token}`;
+            attachmentsHtml += `
+              <div class="relative group rounded-xl overflow-hidden border border-slate-700/50 bg-slate-900/50 p-1">
+                <img src="${previewUrl}" 
+                     class="max-h-48 max-w-full rounded-lg object-contain cursor-pointer hover:opacity-95 transition" 
+                     onclick="window.open('${previewUrl}', '_blank')"
+                     alt="${att.fileName}" />
+                <div class="text-[10px] text-slate-300 mt-1 px-1 flex justify-between items-center">
+                  <span class="truncate max-w-[140px]">${att.fileName}</span>
+                  <a href="${previewUrl}" download="${att.fileName}" target="_blank" class="text-indigo-400 hover:text-indigo-300 p-1"><i class="fa-solid fa-download"></i> Tải về</a>
+                </div>
+              </div>
+            `;
+          } else {
+            const fileUrl = `${API_BASE}${att.downloadUrl}?access_token=${state[clientId].token}`;
+            attachmentsHtml += `
+              <a href="${fileUrl}" target="_blank" 
+                 class="flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/60 hover:bg-slate-900 transition text-left group">
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm">
+                  <i class="fa-solid fa-file-arrow-down"></i>
+                </div>
+                <div class="flex-1 min-w-0 pr-2">
+                  <p class="text-xs font-semibold text-slate-200 truncate group-hover:text-indigo-300 transition">${att.fileName}</p>
+                  <p class="text-[10px] text-slate-400">${(att.sizeBytes / 1024).toFixed(1)} KB</p>
+                </div>
+                <i class="fa-solid fa-download text-xs text-slate-400 group-hover:text-indigo-400"></i>
+              </a>
+            `;
+          }
+        }
+        attachmentsHtml += '</div>';
+      }
+
+      // Nội dung bong bóng chat
+      let bubbleContent = '';
+      let bubbleClass = '';
+
+      if (message.isDeleted) {
+        bubbleContent = `
+          <p class="text-xs italic text-slate-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-ban text-[10px]"></i> Tin nhắn đã bị thu hồi
+          </p>
+        `;
+        bubbleClass = 'max-w-[80%] rounded-2xl px-4 py-2 shadow-sm bg-slate-800/80 border border-slate-700/80 text-slate-400';
+      } else {
+        bubbleContent = `
+          ${message.content ? `<p class="text-sm whitespace-pre-wrap break-words">${escapeHtml(message.content)}</p>` : ''}
+          ${attachmentsHtml}
+        `;
+        bubbleClass = `max-w-[80%] rounded-2xl px-4 py-2.5 shadow-md ${
+          isMe 
+            ? 'bg-indigo-600 text-white rounded-br-none' 
+            : 'bg-slate-700 text-slate-100 rounded-bl-none border border-slate-600'
+        }`;
+      }
+
+      // Nút thu hồi nếu là tin nhắn của tôi và chưa bị xóa
+      const deleteBtnHtml = (isMe && !message.isDeleted) ? `
+        <button id="del-btn-${clientId}-${message.id}" onclick="deleteMessage(${clientId}, ${message.id})" 
+                class="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-rose-400 p-1 text-xs" 
+                title="Thu hồi tin nhắn ở cả 2 phía">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      ` : '';
+
+      msgWrap.innerHTML = `
+        <div class="flex items-center gap-1.5 ${isMe ? 'flex-row' : 'flex-row-reverse'}">
+          ${deleteBtnHtml}
+          <div id="msg-box-${clientId}-${message.id}" class="${bubbleClass}">
+            ${bubbleContent}
+          </div>
+        </div>
+        <span class="text-[10px] text-slate-400 mt-1 mx-1">
+          ${new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </span>
+      `;
+
+      container.appendChild(msgWrap);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+  </script>
+</body>
+</html>
